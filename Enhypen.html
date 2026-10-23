@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ENHYPEN - Connect, Discover, Become One</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #0c0c10;
+      --card-bg: #14141c;
+      --accent: #b80d2d;
+      --accent-glow: rgba(184, 13, 45, 0.45);
+      --text: #f0f0f5;
+      --text-muted: #9a9aa8;
+      --border: #222230;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      line-height: 1.6;
+      scroll-behavior: smooth;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(12, 12, 16, 0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 8%;
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      letter-spacing: 3px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    /* Hero Section */
+    .hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0 20px;
+      background: radial-gradient(circle at center, #24050d 0%, var(--bg) 70%);
+    }
+
+    .hero h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 4rem;
+      letter-spacing: 8px;
+      margin-bottom: 12px;
+      text-shadow: 0 0 25px var(--accent-glow);
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 30px;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      border-radius: 4px;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .btn:hover {
+      background: #e6103b;
+      transform: translateY(-2px);
+    }
+
+    /* Content Sections */
+    section {
+      padding: 90px 8%;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 50px;
+      letter-spacing: 2px;
+      position: relative;
+    }
+
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 3px;
+      background: var(--accent);
+      margin: 12px auto 0;
+    }
+
+    /* About Section */
+    .about-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 40px;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .about-card p {
+      margin-bottom: 16px;
+      color: var(--text-muted);
+    }
+
+    /* Members Grid */
+    .members-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 25px;
+    }
+
+    .member-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .member-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+    }
+
+    .avatar-placeholder {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: #1c1c28;
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-family: 'Cinzel', serif;
+    }
+
+    .member-card h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+    }
+
+    .member-role {
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .member-bio {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Discography */
+    .discography-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+    }
+
+    .track-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .track-card h4 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .track-card span {
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .track-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+
+    /* Footer */
+    footer {
+      background: #08080b;
+      text-align: center;
+      padding: 30px;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.6rem; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="logo">EN<span>-</span>HYPEN</div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#members">Members</a></li>
+      <li><a href="#discography">Music</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>ENHYPEN</h1>
+    <p>Seven boys connecting together to discover and grow through music. Fandom: <strong>ENGENE</strong>.</p>
+    <a href="#members" class="btn">Meet the Members</a>
+  </section>
+
+  <!-- About Section -->
+  <section id="about">
+    <h2 class="section-title">About the Group</h2>
+    <div class="about-card">
+      <p>
+        <strong>ENHYPEN (엔하이픈)</strong> is a 7-member South Korean boy group under <strong>BELIFT LAB</strong> formed through the survival reality competition show <em>I-LAND</em> in 2020.
+      </p>
+      <p>
+        The name represents connection, discovery, and growth—like a hyphen connecting words to create new meanings.
+      </p>
+      <p>
+        <strong>Debut Date:</strong> November 30, 2020 &bull; <strong>Official Fandom:</strong> ENGENE
+      </p>
+    </div>
+  </section>
+
+  <!-- Members Section -->
+  <section id="members">
+    <h2 class="section-title">The Members</h2>
+    <div class="members-grid">
+      
+      <div class="member-card">
+        <div class="avatar-placeholder">JW</div>
+        <h3>Jungwon</h3>
+        <p class="member-role">Leader & Vocalist</p>
+        <p class="member-bio">Known for his charisma, strong leadership, and unique vocal timbre.</p>
+      </div>
+
+      <div class="member-card">
+        <div class="avatar-placeholder">HS</div>
+        <h3>Heeseung</h3>
+        <p class="member-role">Vocalist & Center</p>
+        <p class="member-bio">The ace all-rounder with versatile vocals and captivating stage presence.</p>
+      </div>
+
+      <div class="member-card">
+        <div class="avatar-placeholder">JY</div>
+        <h3>Jay</h3>
+        <p class="member-role">Vocalist & Rapper</p>
+        <p class="member-bio">Energetic, passionate, and plays electric guitar in live stages.</p>
+      </div>
+
+      <div class="member-card">
+        <div class="avatar-placeholder">JK</div>
+        <h3>Jake</h3>
+        <p class="member-role">Vocalist & Rapper</p>
+        <p class="member-bio">Charming with smooth vocal delivery, born in South Korea and raised in Australia.</p>
+      </div>
+
+      <div class="member-card">
+        <div class="avatar-placeholder">SH</div>
+        <h3>Sunghoon</h3>
+        <p class="member-role">Vocalist & Visual</p>
+        <p class="member-bio">Former competitive figure skater known as the "Ice Prince".</p>
+      </div>
+
+      <div class="member-card">
+        <div class="avatar-placeholder">SN</div>
+        <h3>Sunoo</h3>
+        <p class="member-role">Vocalist</p>
+        <p class="member-bio">Brings vibrant energy, expressive vocals, and expressive stage facial acting.</p>
+      </div>
+
+      <div class="member-card">
+        <div class="avatar-placeholder">NK</div>
+        <h3>Ni-ki</h3>
+        <p class="member-role">Main Dancer & Maknae</p>
+        <p class="member-bio">Dance prodigy from Japan renowned for precise and sharp choreography.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Discography Section -->
+  <section id="discography">
+    <h2 class="section-title">Popular Releases</h2>
+    <div class="discography-grid">
+      <div class="track-card">
+        <span>BORDER : DAY ONE (2020)</span>
+        <h4>Given-Taken</h4>
+        <p>The iconic debut title track detailing their journey across the boundary into the music world.</p>
+      </div>
+
+      <div class="track-card">
+        <span>BORDER : CARNIVAL (2021)</span>
+        <h4>Drunk-Dazed</h4>
+        <p>A fast-paced pop-rock anthem that catapulted the group to global recognition.</p>
+      </div>
+
+      <div class="track-card">
+        <span>DARK BLOOD (2023)</span>
+        <h4>Bite Me</h4>
+        <p>A dark, hypnotic, signature vampire concept song with unforgettable choreography.</p>
+      </div>
+
+      <div class="track-card">
+        <span>ROMANCE : UNTOLD (2024)</span>
+        <h4>XO (Only If You Say Yes)</h4>
+        <p>A smooth, romantic pop track showing the group's mature musicality.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>ENHYPEN Fanpage &copy; 2026. Made with &hearts; for ENGENEs.</p>
+  </footer>
+
+</body>
+</html>
