@@ -1,397 +1,235 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ENHYPEN - Connect, Discover, Become One</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --bg: #0c0c10;
-      --card-bg: #14141c;
-      --accent: #b80d2d;
-      --accent-glow: rgba(184, 13, 45, 0.45);
-      --text: #f0f0f5;
-      --text-muted: #9a9aa8;
-      --border: #222230;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: 'Poppins', sans-serif;
-      line-height: 1.6;
-      scroll-behavior: smooth;
-    }
-
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    /* Navigation */
-    nav {
-      position: fixed;
-      top: 0;
-      width: 100%;
-      background: rgba(12, 12, 16, 0.85);
-      backdrop-filter: blur(10px);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 18px 8%;
-      border-bottom: 1px solid var(--border);
-      z-index: 100;
-    }
-
-    .logo {
-      font-family: 'Cinzel', serif;
-      font-size: 1.5rem;
-      letter-spacing: 3px;
-      font-weight: 900;
-      color: #fff;
-    }
-
-    .logo span {
-      color: var(--accent);
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 24px;
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: color 0.3s;
-    }
-
-    .nav-links a:hover {
-      color: var(--accent);
-    }
-
-    /* Hero Section */
-    .hero {
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 0 20px;
-      background: radial-gradient(circle at center, #24050d 0%, var(--bg) 70%);
-    }
-
-    .hero h1 {
-      font-family: 'Cinzel', serif;
-      font-size: 4rem;
-      letter-spacing: 8px;
-      margin-bottom: 12px;
-      text-shadow: 0 0 25px var(--accent-glow);
-    }
-
-    .hero p {
-      font-size: 1.2rem;
-      color: var(--text-muted);
-      max-width: 600px;
-      margin-bottom: 30px;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 12px 30px;
-      background: var(--accent);
-      color: white;
-      font-weight: 600;
-      border-radius: 4px;
-      box-shadow: 0 4px 20px var(--accent-glow);
-      transition: transform 0.2s, background 0.2s;
-    }
-
-    .btn:hover {
-      background: #e6103b;
-      transform: translateY(-2px);
-    }
-
-    /* Content Sections */
-    section {
-      padding: 90px 8%;
-    }
-
-    .section-title {
-      font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
-      text-align: center;
-      margin-bottom: 50px;
-      letter-spacing: 2px;
-      position: relative;
-    }
-
-    .section-title::after {
-      content: '';
-      display: block;
-      width: 60px;
-      height: 3px;
-      background: var(--accent);
-      margin: 12px auto 0;
-    }
-
-    /* About Section */
-    .about-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 40px;
-      max-width: 900px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    .about-card p {
-      margin-bottom: 16px;
-      color: var(--text-muted);
-    }
-
-    /* Members Grid */
-    .members-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 25px;
-    }
-
-    .member-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      text-align: center;
-      transition: transform 0.3s, border-color 0.3s;
-    }
-
-    .member-card:hover {
-      transform: translateY(-6px);
-      border-color: var(--accent);
-    }
-
-    .avatar-placeholder {
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 16px;
-      border-radius: 50%;
-      background: #1c1c28;
-      border: 2px solid var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      font-family: 'Cinzel', serif;
-    }
-
-    .member-card h3 {
-      font-family: 'Cinzel', serif;
-      font-size: 1.3rem;
-      margin-bottom: 6px;
-    }
-
-    .member-role {
-      font-size: 0.85rem;
-      color: var(--accent);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-    }
-
-    .member-bio {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    /* Discography */
-    .discography-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 25px;
-    }
-
-    .track-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      position: relative;
-    }
-
-    .track-card h4 {
-      font-size: 1.2rem;
-      margin-bottom: 8px;
-    }
-
-    .track-card span {
-      font-size: 0.85rem;
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .track-card p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-top: 10px;
-    }
-
-    /* Footer */
-    footer {
-      background: #08080b;
-      text-align: center;
-      padding: 30px;
-      border-top: 1px solid var(--border);
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    @media (max-width: 768px) {
-      .hero h1 { font-size: 2.6rem; }
-      .nav-links { display: none; }
-    }
-  </style>
-</head>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ENGENE Archive: an unofficial ENHYPEN fan archive</title>
+<meta name="description" content="An independent fan archive of ENHYPEN releases, music videos, members and milestones.">
+<meta property="og:title" content="ENGENE Archive">
+<meta property="og:description" content="An independent fan archive of ENHYPEN releases, music videos, members and milestones.">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0d080b;--panel:#181118;--line:#2e2229;--wine:#5c1222;--blood:#d01f3a;--silver:#c9ccd6;--soft:#f3eff1;--mute:#a59ea9;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 110px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--ink);color:var(--soft);font:400 16px/1.55 Figtree,system-ui,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--ink);z-index:12}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--blood);outline-offset:2px}
+main:focus{outline:none}
+.w{max-width:1100px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:11;background:rgba(13,8,11,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:8px 20px;max-width:1100px;margin:0 auto}
+.logo,h1,h2,.cv b{font-family:'Big Shoulders Display',Impact,sans-serif}
+.logo{font-weight:900;font-size:24px;letter-spacing:.04em;text-decoration:none}
+#sf{flex:1 1 200px}#q{width:100%}
+nav{display:flex;overflow-x:auto;flex:1 0 100%;order:3}
+nav a{padding:8px 10px;text-decoration:none;color:var(--mute);border-bottom:2px solid transparent;white-space:nowrap}
+nav a[aria-current]{color:var(--soft);border-color:var(--blood)}
+@media(min-width:900px){nav{flex:0 1 auto;order:0}}
+input,select{background:var(--panel);color:var(--soft);border:1px solid var(--line);padding:9px 10px;font:inherit;border-radius:2px;min-width:0}
+.btn{display:inline-block;background:var(--panel);color:var(--soft);border:1px solid var(--line);padding:9px 14px;font:600 15px Figtree,sans-serif;text-decoration:none;border-radius:2px;cursor:pointer}
+.btn:hover{border-color:var(--silver)}
+.btn.p,.btn[aria-pressed=true]{background:var(--blood);border-color:var(--blood)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+h1{font-size:clamp(40px,9vw,72px);line-height:.95;margin:28px 0 12px;font-weight:900}
+h2{font-size:34px;font-weight:800;margin:40px 0 14px;line-height:1}
+.hero{position:relative;padding:36px 0 18px;overflow:hidden}
+.hero::before{content:"";position:absolute;right:-15%;top:-20%;width:75%;height:130%;background:radial-gradient(closest-side,rgba(208,31,58,.38),rgba(92,18,34,.22) 55%,transparent);pointer-events:none}
+.hero h1{position:relative;font-size:clamp(64px,22vw,210px);line-height:.85;margin:0 0 18px;background:linear-gradient(180deg,#fff,#9ea3b5 70%,#5b4350);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{position:relative;max-width:560px;color:var(--silver);font-size:18px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.card{text-decoration:none;display:block}
+.cv{aspect-ratio:1;display:flex;flex-direction:column;justify-content:space-between;padding:10px;position:relative;overflow:hidden;background:linear-gradient(155deg,hsl(var(--h) 68% 30%),hsl(var(--h) 55% 9%));border:1px solid var(--line)}
+.cv::after{content:"";position:absolute;right:-30%;top:-30%;width:80%;aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.18)}
+.cv b{font-size:clamp(22px,5vw,30px);line-height:.95;font-weight:800;overflow-wrap:anywhere;position:relative}
+.cv span{color:var(--silver);font-size:13px;position:relative}.cv b,.cv span{text-shadow:0 1px 6px rgba(0,0,0,.7)}.cv svg{position:absolute;inset:0;width:100%;height:100%}.th{width:48px;height:48px;flex:none;position:relative;overflow:hidden;border:1px solid var(--line);display:block}.th svg{position:absolute;inset:0;width:100%;height:100%}.tr{list-style:none;padding:0;margin:0}.tr li{display:flex;gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.vt{display:flex;gap:12px;align-items:center}
+.cm{padding:8px 2px}.cm strong{display:block;line-height:1.25}
+small,.mute{color:var(--mute);display:block;font-size:14px}
+@media(prefers-reduced-motion:no-preference){.card .cv{transition:transform .25s}.card:hover .cv{transform:translateY(-3px)}.hero h1,.lede{animation:rise .8s both}.lede{animation-delay:.15s}@keyframes rise{from{opacity:0;transform:translateY(18px)}}}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.ctl input{flex:1 1 220px}
+.list,.tl{list-style:none;margin:0;padding:0}
+.list li{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.list .btn{padding:7px 11px;font-size:14px}.act{display:flex;gap:8px;flex-wrap:wrap}
+.tl li{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.tl time{color:var(--silver)}.tl p{margin:2px 0;color:var(--mute)}
+@media(max-width:520px){.tl li{grid-template-columns:1fr;gap:2px}}
+.ad{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:24px;align-items:start}
+@media(max-width:700px){.ad{grid-template-columns:1fr}}
+.cv.big{max-width:300px}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;margin:12px 0}dt{color:var(--mute)}dd{margin:0}
+.note{border-left:3px solid var(--wine);padding:2px 0 2px 12px;color:var(--silver)}
+.empty{color:var(--mute);padding:20px 0}
+.crumb{color:var(--mute);font-size:14px;margin:20px 0 0}
+.ko{color:var(--mute);font-weight:400;font-size:.5em}
+li a{text-underline-offset:3px}
+footer{color:var(--mute);font-size:14px;padding:40px 20px 30px;border-top:1px solid var(--line);margin-top:50px}
+</style></head>
 <body>
+<header><div class="bar">
+<a class="logo" href="#home">ENGENE Archive</a>
+<form id="sf" role="search"><input id="q" type="search" list="sug" placeholder="Search songs, albums, members" aria-label="Search the archive"></form>
+<nav aria-label="Main"><a href="#home">Home</a><a href="#discography">Discography</a><a href="#videos">Music videos</a><a href="#songs">Songs</a><a href="#members">Members</a><a href="#timeline">Timeline</a><a href="#saved">Saved</a><a href="#about">About</a></nav>
+</div></header>
+<datalist id="sug"></datalist>
+<main id="app" class="w" tabindex="-1"></main>
+<footer class="w">Unofficial fan project. Not affiliated with ENHYPEN, BELIFT LAB or HYBE. All music and video belongs to the original publishers; this site only links out.</footer>
+<script>
+// Releases: id, title, date, type, market (KR/JP/EN/OT), hue, title track, other verified tracks, note
+const A=[
+["border-day-one","Border: Day One","2020-11-30","EP","KR",350,"Given-Taken",["Let Me In (20 Cube)","Flicker"],"Debut EP."],
+["border-carnival","Border: Carnival","2021-04-26","EP","KR",18,"Drunk-Dazed",["Fever","Not for Sale"],""],
+["border-hakanai","Border: Hakanai","2021-07-06","Single","JP",210,"",["Given-Taken (Japanese ver.)","Let Me In (20 Cube) (Japanese ver.)","Forget Me Not"],"Japanese debut single, a triple A-side. Forget Me Not opened the anime Re-Main."],
+["dimension-dilemma","Dimension: Dilemma","2021-10-12","Studio album","KR",335,"Tamed-Dashed",[],"First studio album."],
+["dimension-answer","Dimension: Answer","2022-01-10","Repackage","KR",275,"Blessed-Cursed",["Polaroid Love"],"Repackage of Dimension: Dilemma."],
+["dimension-senko","Dimension: Senkō","2022-05-03","Single","JP",40,"",["Tamed-Dashed (Japanese ver.)","Drunk-Dazed (Japanese ver.)","Always"],"Second Japanese single, a triple A-side."],
+["manifesto-day-1","Manifesto: Day 1","2022-07-04","EP","KR",190,"Future Perfect (Pass the Mic)",[],""],
+["sadame","Sadame","2022-10-26","Studio album","JP",230,"",["Always","Forget Me Not","Make the Change","Blessed-Cursed (Japanese ver.)","Future Perfect (Pass the Mic) (Japanese ver.)","Polaroid Love (Japanese ver.)"],"First Japanese studio album, nine tracks in total. The Polaroid Love version is a CD-only bonus."],
+["dark-blood","Dark Blood","2023-05-22","EP","KR",0,"Bite Me",[],""],
+["you","結 -You-","2023-09-05","Single","JP",300,"",["Bite Me (Japanese ver.)","Bills (Japanese ver.)","Blossom"],"Third Japanese single, a triple A-side."],
+["orange-blood","Orange Blood","2023-11-17","EP","KR",25,"Sweet Venom",[],""],
+["memorabilia","Memorabilia","2024-05-13","Special album","KR",260,"",["One in a Billion","Criminal Love"],"Special album tied to the Dark Moon webtoon project."],
+["romance-untold","Romance: Untold","2024-07-12","Studio album","KR",345,"XO (Only If You Say Yes)",["Brought the Heat Back"],""],
+["daydream","Romance: Untold -Daydream-","2024-11-11","Repackage","KR",200,"No Doubt",["Daydream"],"Repackage of Romance: Untold."],
+["desire-unleash","Desire: Unleash","2025-06-05","EP","KR",5,"Bad Desire (With or Without You)",["Loose"],""],
+["yoi","宵 -Yoi-","2025-07-29","Single","JP",280,"",["Bad Desire (With or Without You) (Japanese ver.)","Shine on Me","Echoes"],"Fourth Japanese single, a triple A-side."],
+["sin-vanish","The Sin: Vanish","2026-01-16","EP","KR",355,"Knife",["No Way Back (feat. So!YoON!)","Stealer","Sleep Tight"],"First release of The Sin series."],
+["sin-bliss","The Sin: Bliss","2026-08-21","EP","KR",348,"Bloody Paradise",["Two Fools","Stuck","Bad for You"],"First release as six members. Reached number one on the Billboard 200."],
+["always","Always","2022-02-22","Single","JP",320,"Always",[],"Japanese digital single and theme of the NTV drama Muchaburi!"],
+["loose","Loose","2025-04-04","Single","EN",150,"Loose",[],"English-language digital single, also on Desire: Unleash."],
+["one-in-a-billion","One in a Billion","2022-09-06","Soundtrack","OT",250,"One in a Billion",[],"Soundtrack for the Dark Moon: The Blood Altar webtoon."],
+["i-need-the-light","I Need the Light","2022-08-12","Soundtrack","OT",220,"I Need the Light",[],"Theme of the drama Mimicus."],
+["zero-moment","Zero Moment","2022-11-28","Soundtrack","OT",180,"Zero Moment",[],"Summer Strike soundtrack, sung by Heeseung, Jay and Jake."],
+["hey-tayo","Hey Tayo","2021-07-29","Soundtrack","OT",90,"Hey Tayo",[],"Remake of the Tayo the Little Bus theme."],
+["billy-poco","Billy Poco","2021","Soundtrack","OT",110,"Billy Poco",[],"New song released with the Tayo collaboration. Exact date not verified."],
+["a-kind-of-magic","A Kind of Magic (Coke Studio Session)","2022-06-08","Collaboration","OT",30,"A Kind of Magic",[],"Cover of the Queen song for a Coke summer campaign."],
+["one-and-only","One and Only","2023-07-12","Collaboration","OT",340,"One and Only",[],"Pokémon Music Collective collaboration."],
+["keep-swimmin","Keep Swimmin’ Through","2023","Soundtrack","OT",200,"Keep Swimmin’ Through",[],"Baby Shark’s Big Movie soundtrack. Exact date not verified."],
+["confessions","Confessions (Flo Rida feat. Heeseung & Jake)","2025-01-10","Collaboration","OT",270,"Confessions",[],"Flo Rida single also featuring Paul Russell."],
+["well-be-fine","We’ll Be Fine","2026","Single","JP",160,"We’ll Be Fine",[],"Japanese single. Exact date not verified."]
+];
+// Music videos: title, year, release id
+const MV=[["Given-Taken",2020,"border-day-one"],["Let Me In (20 Cube)",2020,"border-day-one"],["Drunk-Dazed",2021,"border-carnival"],["Fever",2021,"border-carnival"],["Tamed-Dashed",2021,"dimension-dilemma"],["Blessed-Cursed",2022,"dimension-answer"],["Future Perfect (Pass the Mic)",2022,"manifesto-day-1"],["ParadoXXX Invasion",2022,""],["One in a Billion",2022,"one-in-a-billion"],["Bite Me",2023,"dark-blood"],["Sacrifice (Eat Me Up)",2023,""],["Sweet Venom",2023,"orange-blood"],["XO (Only If You Say Yes)",2024,"romance-untold"],["Brought the Heat Back",2024,"romance-untold"],["No Doubt",2024,"daydream"],["Bad Desire (With or Without You)",2025,"desire-unleash"],["Outside",2025,""],["Shine on Me",2025,"yoi"],["Knife",2026,"sin-vanish"],["We’ll Be Fine",2026,"well-be-fine"],["Bloody Paradise",2026,"sin-bliss"],["Checkmate",2026,""]];
+// Members: id, name, Korean, birth name, birthday, note, current, hue, I-LAND final rank
+const M=[["jungwon","Jungwon","정원","Yang Jung-won (양정원)","2004-02-09","Leader of the group.",1,350,1],["jay","Jay","제이","Park Jong-seong (박종성)","2002-04-20","Wrote lyrics for Glay’s 2024 song Whodunit.",1,210,2],["jake","Jake","제이크","Sim Jae-yun (심재윤)","2002-11-15","Featured on Flo Rida’s 2025 single Confessions with Heeseung.",1,25,3],["sunghoon","Sunghoon","성훈","Park Sung-hoon (박성훈)","2002-12-08","",1,190,6],["sunoo","Sunoo","선우","Kim Sun-woo (김선우)","2003-06-24","",1,300,7],["ni-ki","Ni-ki","니키","Nishimura Riki (西村リキ)","2005-12-09","",1,150,4],["heeseung","Heeseung","희승","Lee Hee-seung (이희승)","2001-10-15","Belift Lab announced on March 10, 2026 that he would leave the group, which continues as six members.",0,240,5]];
+// Timeline: date, title, description, related page
+const T=[["2020-09","I-LAND finale","Seven members were chosen on the last episode of Mnet’s survival show I-LAND.",""],["2020-11-30","Debut","Debuted with the EP Border: Day One.","album-border-day-one"],["2020-12-04","First music show","Performed Given-Taken on Music Bank.",""],["2021-04-26","Border: Carnival","Second EP. Drunk-Dazed won its first music show award on May 4.","album-border-carnival"],["2021-07-06","Japanese debut","Released the single Border: Hakanai.","album-border-hakanai"],["2021-10-12","Dimension: Dilemma","First studio album, entering the Billboard 200 at number 11.","album-dimension-dilemma"],["2022-01-10","Dimension: Answer","Repackage of the first studio album.","album-dimension-answer"],["2022-05-03","Dimension: Senkō","Second Japanese single.","album-dimension-senko"],["2022-07-04","Manifesto: Day 1","Third EP and second million-selling album.","album-manifesto-day-1"],["2022-09-17","Manifesto World Tour","First world tour opened in Seoul.",""],["2022-10-26","Sadame","First Japanese studio album.","album-sadame"],["2023-01-21","First dome shows","Two sold-out nights at Kyocera Dome Osaka.",""],["2023-05-22","Dark Blood","Fourth EP and first top-five entry on the Billboard 200.","album-dark-blood"],["2023-07-29","Fate World Tour","Second world tour began in Seoul.",""],["2023-11-17","Orange Blood","Fifth EP.","album-orange-blood"],["2024-05-13","Memorabilia","Special album for the Dark Moon webtoon project.","album-memorabilia"],["2024-07-12","Romance: Untold","Second studio album.","album-romance-untold"],["2024-10-05","Walk the Line Tour","Third world tour began.",""],["2024-11-11","Daydream","Repackage of Romance: Untold.","album-daydream"],["2025-04-04","Loose and Coachella","English single Loose, then Coachella sets on April 12 and 19.","album-loose"],["2025-06-05","Desire: Unleash","Sixth EP.","album-desire-unleash"],["2025-07-29","Yoi","Fourth Japanese single.","album-yoi"],["2026-01-16","The Sin: Vanish","Seventh EP, opening The Sin series.","album-sin-vanish"],["2026-03-10","Heeseung departs","Belift Lab announced Heeseung would leave; the group continues as six.","member-heeseung"],["2026-05-01","Blood Saga Tour","Fourth world tour began.",""],["2026-08-21","The Sin: Bliss","Eighth EP, first release as six members and first Billboard 200 number one.","album-sin-bliss"]];
 
-  <!-- Navigation -->
-  <nav>
-    <div class="logo">EN<span>-</span>HYPEN</div>
-    <ul class="nav-links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#members">Members</a></li>
-      <li><a href="#discography">Music</a></li>
-    </ul>
-  </nav>
+const MK={KR:'Korean',JP:'Japanese',EN:'English',OT:'Language not verified'};
+const $=s=>document.querySelector(s),app=$('#app'),RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>s.toLowerCase().normalize('NFKD').replace(/\p{M}/gu,'').replace(/[^\p{L}\p{N}]/gu,'');
+const fmt=d=>d.length==10?new Date(d+'T00:00:00Z').toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}):d.length==7?new Date(d+'-01T00:00:00Z').toLocaleDateString('en-US',{year:'numeric',month:'long',timeZone:'UTC'}):d;
+const yt=q=>'https://www.youtube.com/results?search_query='+encodeURIComponent('ENHYPEN '+q);
+const sp=q=>'https://open.spotify.com/search/'+encodeURIComponent('ENHYPEN '+q);
+const am=q=>'https://music.apple.com/search?term='+encodeURIComponent('ENHYPEN '+q);
+const X='target="_blank" rel="noopener noreferrer"';
+const hs=s=>{let h=7;for(const c of s)h=(h*31+c.codePointAt(0))>>>0;return h};
+const art=(s,h)=>{let n=hs(s);const r=()=>(n=(n*1664525+1013904223)>>>0)/4294967296;let o='';for(let i=0;i<6;i++){const x=r()*100|0,y=r()*100|0,z=8+r()*34|0;o+=r()<.5?`<circle cx='${x}' cy='${y}' r='${z}' fill='hsl(${h+(r()*50|0)-10} 70% ${20+r()*30|0}%)' opacity='.5'/>`:`<path d='M${x} ${y}L${x+z} ${y-z}L${x+z*1.6|0} ${y+z}Z' fill='hsl(${h+(r()*50|0)} 60% ${30+r()*35|0}%)' opacity='.45'/>`}return `<svg viewBox='0 0 100 100' preserveAspectRatio='xMidYMid slice' aria-hidden='true'><rect width='100' height='100' fill='hsl(${h} 55% 9%)'/>${o}<circle cx='${20+r()*60|0}' cy='${20+r()*60|0}' r='${30+r()*20|0}' fill='none' stroke='#fff' stroke-opacity='.16'/></svg>`};
+const SG=new Map();A.forEach(a=>(a[6]?[a[6]]:[]).concat(a[7]).forEach(t=>{if(!SG.has(t))SG.set(t,a)}));
+const sart=(t,a)=>art(t,SG.has(t)?SG.get(t)[5]:a?a[5]:hs(t)%360);
+const port=m=>art(m[0],m[7]).replace('</svg>',`<circle cx='50' cy='42' r='15' fill='#0d080b' fill-opacity='.6'/><path d='M16 100C18 72 34 62 50 62S82 72 84 100Z' fill='#0d080b' fill-opacity='.6'/></svg>`);
+const WP={'border-day-one':'Border:_Day_One','border-carnival':'Border:_Carnival','dimension-dilemma':'Dimension:_Dilemma','dimension-answer':'Dimension:_Answer','manifesto-day-1':'Manifesto:_Day_1','sadame':'Sadame','dark-blood':'Dark_Blood_(EP)','orange-blood':'Orange_Blood','memorabilia':'Memorabilia_(EP)','romance-untold':'Romance:_Untold','daydream':'Romance:_Untold_-Daydream-','desire-unleash':'Desire:_Unleash','sin-vanish':'The_Sin:_Vanish','sin-bliss':'The_Sin:_Bliss'};
+let mem={fav:[]},Q='',F={q:'',type:'',mk:'',yr:'',sort:'new'},V={q:'',yr:''};
+try{const v=localStorage.getItem('enge');if(v)mem=JSON.parse(v)}catch(e){}
+const save=()=>{try{localStorage.setItem('enge',JSON.stringify(mem))}catch(e){}};
+const isFav=k=>mem.fav.includes(k);
+const tog=k=>{mem.fav=isFav(k)?mem.fav.filter(x=>x!==k):mem.fav.concat(k);save()};
+const fbtn=k=>`<button class="btn" data-f="${esc(k)}" aria-pressed="${isFav(k)}">${isFav(k)?'Saved':'Save'}</button>`;
+const opts=(l,cur,all)=>(all?'<option value="">'+all+'</option>':'')+l.map(x=>`<option value="${esc(x[0])}"${x[0]==cur?' selected':''}>${esc(x[1])}</option>`).join('');
+const nf=()=>'<h1>Page not found</h1><p>That page isn’t in the archive.</p><a class="btn p" href="#home">Back to home</a>';
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <h1>ENHYPEN</h1>
-    <p>Seven boys connecting together to discover and grow through music. Fandom: <strong>ENGENE</strong>.</p>
-    <a href="#members" class="btn">Meet the Members</a>
-  </section>
+const card=a=>`<a class="card" href="#album-${a[0]}"><div class="cv" style="--h:${a[5]}">${art(a[0],a[5])}<span>${a[2].slice(0,4)}</span><b>${esc(a[1])}</b></div><div class="cm"><strong>${esc(a[1])}</strong><small>${fmt(a[2])}</small><small>${a[3]}, ${MK[a[4]]}</small></div></a>`;
+const mcard=m=>`<a class="card" href="#member-${m[0]}"><div class="cv" style="--h:${m[7]}">${port(m)}<span>${m[2]}</span><b>${m[1]}</b></div><div class="cm"><strong>${m[1]}</strong><small>${m[6]?'Current member':'Former member'}</small></div></a>`;
+const vrow=m=>{const a=A.find(x=>x[0]==m[2]),k='v:'+m[0];return `<li><div class="vt"><span class="th">${sart(m[0],a)}</span><div><strong>${esc(m[0])}</strong><small>${m[1]}${a?', from <a href="#album-'+a[0]+'">'+esc(a[1])+'</a>':''}</small></div></div><div class="act"><a class="btn" ${X} href="${yt(m[0]+' MV')}">Find on YouTube</a>${fbtn(k)}</div></li>`};
+const tli=t=>`<li><time>${fmt(t[0])}</time><div><strong>${esc(t[1])}</strong><p>${esc(t[2])}</p>${t[3]?'<a href="#'+t[3]+'">Related page</a>':''}</div></li>`;
+const crumb=(a,b)=>`<p class="crumb"><a href="#home">Home</a> / <a href="#${a[0]}">${a[1]}</a> / ${esc(b)}</p>`;
 
-  <!-- About Section -->
-  <section id="about">
-    <h2 class="section-title">About the Group</h2>
-    <div class="about-card">
-      <p>
-        <strong>ENHYPEN (엔하이픈)</strong> is a 7-member South Korean boy group under <strong>BELIFT LAB</strong> formed through the survival reality competition show <em>I-LAND</em> in 2020.
-      </p>
-      <p>
-        The name represents connection, discovery, and growth—like a hyphen connecting words to create new meanings.
-      </p>
-      <p>
-        <strong>Debut Date:</strong> November 30, 2020 &bull; <strong>Official Fandom:</strong> ENGENE
-      </p>
-    </div>
-  </section>
+function home(){
+ const latest=A.filter(a=>a[2].length==10&&a[3]!='Soundtrack').sort((x,y)=>y[2].localeCompare(x[2])).slice(0,4);
+ return `<section class="hero"><h1>ENHYPEN</h1><p class="lede">An independent fan archive of the group’s releases, music videos, members and milestones. Every record names its source, and anything unverified says so.</p><div class="row"><a class="btn p" href="#discography">Browse the discography</a><a class="btn" href="#videos">Music videos</a></div></section>
+ <h2>Latest releases</h2><div class="g">${latest.map(card).join('')}</div>
+ <h2>Members</h2><p class="note">Heeseung left the group in March 2026, so ENHYPEN is now six members. He is listed as a former member.</p><div class="g">${M.map(mcard).join('')}</div>
+ <h2>Recent milestones</h2><ul class="tl">${T.slice(-5).reverse().map(tli).join('')}</ul><a class="btn" href="#timeline">Full timeline</a>`}
 
-  <!-- Members Section -->
-  <section id="members">
-    <h2 class="section-title">The Members</h2>
-    <div class="members-grid">
-      
-      <div class="member-card">
-        <div class="avatar-placeholder">JW</div>
-        <h3>Jungwon</h3>
-        <p class="member-role">Leader & Vocalist</p>
-        <p class="member-bio">Known for his charisma, strong leadership, and unique vocal timbre.</p>
-      </div>
+function grid(){
+ const q=norm(F.q),r=A.filter(a=>(!F.type||a[3]==F.type)&&(!F.mk||a[4]==F.mk)&&(!F.yr||a[2].startsWith(F.yr))&&(!q||norm(a[1]+a[6]+a[7].join('')).includes(q))).sort((x,y)=>F.sort=='old'?x[2].localeCompare(y[2]):y[2].localeCompare(x[2]));
+ $('#g').innerHTML=r.length?r.map(card).join(''):'<p class="empty">No releases match. Clear a filter or try a shorter title.</p>';
+ $('#n').textContent=r.length+' of '+A.length+' releases';}
+function disco(){
+ const ty=[...new Set(A.map(a=>a[3]))].map(t=>[t,t]),yr=[...new Set(A.map(a=>a[2].slice(0,4)))].sort().reverse().map(y=>[y,y]);
+ return `<h1>Discography</h1><div class="ctl"><input data-s="d" data-k="q" type="search" placeholder="Search releases and tracks" aria-label="Search releases" value="${esc(F.q)}"><select data-s="d" data-k="type" aria-label="Release type">${opts(ty,F.type,'All types')}</select><select data-s="d" data-k="mk" aria-label="Market">${opts(Object.entries(MK),F.mk,'All markets')}</select><select data-s="d" data-k="yr" aria-label="Year">${opts(yr,F.yr,'All years')}</select><select data-s="d" data-k="sort" aria-label="Sort order">${opts([['new','Newest first'],['old','Oldest first']],F.sort)}</select></div><p id="n" class="mute"></p><div class="g" id="g"></div>`}
 
-      <div class="member-card">
-        <div class="avatar-placeholder">HS</div>
-        <h3>Heeseung</h3>
-        <p class="member-role">Vocalist & Center</p>
-        <p class="member-bio">The ace all-rounder with versatile vocals and captivating stage presence.</p>
-      </div>
+function album(id){
+ const a=A.find(x=>x[0]==id);if(!a)return nf();
+ const tr=(a[6]?[a[6]]:[]).concat(a[7]),yr=a[2].slice(0,4),rel=A.filter(x=>x[0]!=id&&x[2].slice(0,4)==yr).slice(0,4),mv=MV.filter(m=>m[2]==id);
+ return crumb(['discography','Discography'],a[1])+`<div class="ad"><div class="cv big" style="--h:${a[5]}">${art(a[0],a[5])}<span>${yr}</span><b>${esc(a[1])}</b></div><div><h1>${esc(a[1])}</h1>
+ <dl><dt>Release date</dt><dd>${fmt(a[2])}</dd><dt>Type</dt><dd>${a[3]}</dd><dt>Market</dt><dd>${MK[a[4]]}</dd>${a[6]?'<dt>Title track</dt><dd>'+esc(a[6])+'</dd>':''}</dl>
+ ${a[8]?'<p>'+esc(a[8])+'</p>':''}<div class="row">${fbtn('a:'+id)}<a class="btn" ${X} href="${sp(a[1])}">Search Spotify</a><a class="btn" ${X} href="${am(a[1])}">Search Apple Music</a><a class="btn" ${X} href="${yt(a[1])}">Search YouTube</a>${WP[id]?`<a class="btn" ${X} href="https://en.wikipedia.org/wiki/${WP[id]}">See official cover</a>`:''}</div></div></div>
+ <h2>Verified tracks</h2><ul class="tr">${tr.map(t=>`<li><span class="th">${sart(t)}</span><a ${X} href="${sp(t)}">${esc(t)}</a></li>`).join('')}</ul>
+ <p class="note">This is not the full ordered tracklist. Complete tracklists and durations are not verified yet. Track links open a Spotify search; there is no audio player on this site.</p>
+ ${mv.length?'<h2>Music videos</h2><ul class="list">'+mv.map(vrow).join('')+'</ul>':''}
+ ${rel.length?'<h2>Releases from '+yr+'</h2><div class="g">'+rel.map(card).join('')+'</div>':''}
+ <p class="mute">Source: <a ${X} href="https://en.wikipedia.org/wiki/Enhypen_discography">Wikipedia, Enhypen discography</a>. Last checked Oct 23, 2026. Not yet cross-checked with BELIFT LAB.</p>`}
 
-      <div class="member-card">
-        <div class="avatar-placeholder">JY</div>
-        <h3>Jay</h3>
-        <p class="member-role">Vocalist & Rapper</p>
-        <p class="member-bio">Energetic, passionate, and plays electric guitar in live stages.</p>
-      </div>
+function vlist(){
+ const q=norm(V.q),r=MV.filter(m=>(!V.yr||m[1]==V.yr)&&(!q||norm(m[0]).includes(q))).sort((x,y)=>y[1]-x[1]);
+ $('#vl').innerHTML=r.length?r.map(vrow).join(''):'<li class="empty">No music videos match.</li>';}
+function vids(){
+ const yr=[...new Set(MV.map(m=>m[1]))].sort().reverse().map(y=>[y,y]);
+ return `<h1>Music videos</h1><p class="note">Titles and years come from Wikipedia’s ENHYPEN discography. Video IDs are not verified yet, so nothing is embedded: each button opens a YouTube search. Wikipedia counts 32 music videos; this list has ${MV.length}, and choreography, performance and Japanese-version cuts are not all listed.</p><div class="ctl"><input data-s="v" data-k="q" type="search" placeholder="Search music videos" aria-label="Search music videos" value="${esc(V.q)}"><select data-s="v" data-k="yr" aria-label="Year">${opts(yr,V.yr,'All years')}</select></div><ul class="list" id="vl"></ul>`}
 
-      <div class="member-card">
-        <div class="avatar-placeholder">JK</div>
-        <h3>Jake</h3>
-        <p class="member-role">Vocalist & Rapper</p>
-        <p class="member-bio">Charming with smooth vocal delivery, born in South Korea and raised in Australia.</p>
-      </div>
+function mems(){return `<h1>Members</h1><p class="note">ENHYPEN has six members. Heeseung, who debuted with the group, left in March 2026.</p><h2>Current members</h2><div class="g">${M.filter(m=>m[6]).map(mcard).join('')}</div><h2>Former member</h2><div class="g">${M.filter(m=>!m[6]).map(mcard).join('')}</div>`}
+function memb(id){
+ const i=M.findIndex(m=>m[0]==id);if(i<0)return nf();
+ const m=M[i],p=M[(i+M.length-1)%M.length],n=M[(i+1)%M.length];
+ return crumb(['members','Members'],m[1])+`<div class="cv big" style="--h:${m[7]}">${port(m)}<span>${m[2]}</span><b>${m[1]}</b></div><small>Illustrated stand-in, not an official photo.</small><h1>${m[1]} <span class="ko">${m[2]}</span></h1><dl><dt>Birth name</dt><dd>${m[3]}</dd><dt>Birthday</dt><dd>${fmt(m[4])}</dd><dt>I-LAND final rank</dt><dd>${m[8]} of 7</dd><dt>Status</dt><dd>${m[6]?'Current member':'Former member'}</dd></dl>${m[5]?'<p>'+esc(m[5])+'</p>':''}${m[6]?'':'<p><a '+X+' href="https://www.koreatimes.co.kr/entertainment/k-pop/20260310/enhypens-heeseung-announces-departure-from-group">Korea Times report</a></p>'}
+ <div class="row">${fbtn('m:'+id)}<a class="btn" ${X} href="${yt(m[1]+' official')}">Find videos on YouTube</a><a class="btn" ${X} href="https://beliftlab.com/enhypen">Official page (BELIFT LAB)</a></div>
+ <p class="note">Birthdays and birth names come from several fan profile pages and are not checked against an official source. Birthplaces, positions, photos and per-member clips are not catalogued yet.</p>
+ <div class="row"><a class="btn" href="#member-${p[0]}">Previous: ${p[1]}</a><a class="btn" href="#member-${n[0]}">Next: ${n[1]}</a><a class="btn" href="#members">All members</a></div>`}
 
-      <div class="member-card">
-        <div class="avatar-placeholder">SH</div>
-        <h3>Sunghoon</h3>
-        <p class="member-role">Vocalist & Visual</p>
-        <p class="member-bio">Former competitive figure skater known as the "Ice Prince".</p>
-      </div>
+function tl(){
+ const ys=[...new Set(T.map(t=>t[0].slice(0,4)))];
+ return `<h1>Timeline</h1><p>${T.length} milestones, checked against Wikipedia’s group and discography articles on Oct 23, 2026.</p><div class="row">${ys.map(y=>`<button class="btn" data-y="${y}">${y}</button>`).join('')}</div>`+ys.map(y=>`<section id="y${y}"><h2>${y}</h2><ul class="tl">${T.filter(t=>t[0].startsWith(y)).map(tli).join('')}</ul></section>`).join('')}
 
-      <div class="member-card">
-        <div class="avatar-placeholder">SN</div>
-        <h3>Sunoo</h3>
-        <p class="member-role">Vocalist</p>
-        <p class="member-bio">Brings vibrant energy, expressive vocals, and expressive stage facial acting.</p>
-      </div>
+function saved(){
+ const it=mem.fav.map(k=>{const i=k.indexOf(':'),t=k.slice(0,i),v=k.slice(i+1);
+  if(t=='a'){const a=A.find(x=>x[0]==v);return a&&{t,h:card(a)}}
+  if(t=='v'){const m=MV.find(x=>x[0]==v);return m&&{t,h:vrow(m)}}
+  if(t=='m'){const m=M.find(x=>x[0]==v);return m&&{t,h:mcard(m)}}}).filter(Boolean);
+ const g=t=>it.filter(i=>i.t==t).map(i=>i.h).join('');
+ return `<h1>Saved</h1><p class="note">Saved items stay in this browser. If storage is blocked, they last only until you close the page.</p>`+(it.length?(g('a')?'<h2>Releases</h2><div class="g">'+g('a')+'</div>':'')+(g('v')?'<h2>Music videos</h2><ul class="list">'+g('v')+'</ul>':'')+(g('m')?'<h2>Members</h2><div class="g">'+g('m')+'</div>':''):'<p class="empty">Nothing saved yet. Use Save on a release, music video or member.</p>')}
 
-      <div class="member-card">
-        <div class="avatar-placeholder">NK</div>
-        <h3>Ni-ki</h3>
-        <p class="member-role">Main Dancer & Maknae</p>
-        <p class="member-bio">Dance prodigy from Japan renowned for precise and sharp choreography.</p>
-      </div>
+function srch(){
+ const q=norm(Q),f=(r,fn)=>q?r.filter(x=>norm(fn(x)).includes(q)):[];
+ const a=f(A,x=>x[1]+x[6]+x[7].join('')),v=f(MV,x=>x[0]),m=f(M,x=>x[1]+x[2]+x[3]),t=f(T,x=>x[1]+x[2]),n=a.length+v.length+m.length+t.length;
+ return `<h1>Search</h1><p>${q?n+' results for “'+esc(Q)+'”':'Type a title, member or event in the search box above.'}</p>`+(a.length?'<h2>Releases</h2><div class="g">'+a.map(card).join('')+'</div>':'')+(v.length?'<h2>Music videos</h2><ul class="list">'+v.map(vrow).join('')+'</ul>':'')+(m.length?'<h2>Members</h2><div class="g">'+m.map(mcard).join('')+'</div>':'')+(t.length?'<h2>Timeline</h2><ul class="tl">'+t.map(tli).join('')+'</ul>':'')+(q&&!n?'<p class="empty">No matches. Try fewer letters or another spelling; “senko” finds Senkō.</p>':'')}
 
-    </div>
-  </section>
+function songs(){
+ const r=[...SG].sort((x,y)=>norm(x[0]).localeCompare(norm(y[0])));
+ return `<h1>Songs</h1><p class="note">${r.length} song titles named in this archive. Pictures are original stand-in art, not official cover images. Each title opens a Spotify search.</p><ul class="tr">${r.map(([t,a])=>`<li><span class="th">${sart(t)}</span><div><a ${X} href="${sp(t)}">${esc(t)}</a><small>${esc(a[1])}, ${a[2].slice(0,4)}</small></div><a class="btn" style="margin-left:auto" href="#album-${a[0]}">Album</a></li>`).join('')}</ul>`}
+function about(){
+ const tn=A.reduce((s,a)=>s+(a[6]?1:0)+a[7].length,0);
+ return `<h1>About</h1><p>ENGENE Archive is an independent fan project. It is not affiliated with or endorsed by ENHYPEN, BELIFT LAB or HYBE. Names and marks belong to their owners, and all music and video stays with the original publishers.</p>
+ <h2>What is in here</h2><ul><li>${A.length} releases with dates, types and markets, checked Oct 23, 2026 against Wikipedia’s discography article.</li><li>${tn} named tracks. Full ordered tracklists and durations are unverified.</li><li>${MV.length} music videos listed; Wikipedia counts 32.</li><li>${M.length} members and ${T.length} timeline milestones.</li></ul>
+ <h2>Known gaps</h2><ul><li>No cross-check yet against BELIFT LAB, the official YouTube channels or Universal Music Japan.</li><li>No official photos or cover art: this hosted page cannot load remote images, and member photos and cover art are copyrighted. Every album, song and member has original generated stand-in art instead. Album pages link to the official cover on Wikipedia.</li><li>No YouTube video IDs or embeds, and no dance practices, teasers, behind-the-scenes, variety, concert or short-form clips.</li><li>No photo gallery or music player.</li><li>Birthdays come from fan profile pages.</li></ul>
+ <h2>Sources</h2><ul><li><a ${X} href="https://en.wikipedia.org/wiki/Enhypen_discography">Wikipedia: Enhypen discography</a></li><li><a ${X} href="https://en.wikipedia.org/wiki/Enhypen">Wikipedia: Enhypen</a></li><li><a ${X} href="https://www.koreatimes.co.kr/entertainment/k-pop/20260310/enhypens-heeseung-announces-departure-from-group">Korea Times: Heeseung announcement</a></li><li><a ${X} href="https://www.billboard.com/music/chart-beat/enhypen-number-one-billboard-200-the-sin-bliss-1236328323/">Billboard: The Sin: Bliss at number one</a></li><li><a ${X} href="https://beliftlab.com/enhypen">BELIFT LAB ENHYPEN page</a> (listed by Wikipedia, not yet used as a data source)</li></ul>
+ <h2>Adding new records</h2><p>Releases, videos, members and milestones are plain lists at the top of the page’s code. New rows appear in filters, search and detail pages automatically.</p>`}
 
-  <!-- Discography Section -->
-  <section id="discography">
-    <h2 class="section-title">Popular Releases</h2>
-    <div class="discography-grid">
-      <div class="track-card">
-        <span>BORDER : DAY ONE (2020)</span>
-        <h4>Given-Taken</h4>
-        <p>The iconic debut title track detailing their journey across the boundary into the music world.</p>
-      </div>
+function render(){
+ const t=(location.hash||'#home').slice(1)||'home';let h;
+ if(t=='home')h=home();else if(t=='discography')h=disco();else if(t.startsWith('album-'))h=album(t.slice(6));else if(t=='videos')h=vids();else if(t=='members')h=mems();else if(t.startsWith('member-'))h=memb(t.slice(7));else if(t=='timeline')h=tl();else if(t=='saved')h=saved();else if(t=='search')h=srch();else if(t=='about')h=about();else if(t=='songs')h=songs();else h=nf();
+ app.innerHTML=h;
+ if(t=='discography')grid();if(t=='videos')vlist();
+ document.querySelectorAll('nav a').forEach(a=>{const k=a.getAttribute('href').slice(1),on=k==t||(k=='discography'&&t.startsWith('album-'))||(k=='members'&&t.startsWith('member-'));on?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current')});
+ const h1=app.querySelector('h1');document.title=(h1?h1.textContent.trim()+' | ':'')+'ENGENE Archive';
+ scrollTo(0,0);app.focus({preventScroll:true});}
 
-      <div class="track-card">
-        <span>BORDER : CARNIVAL (2021)</span>
-        <h4>Drunk-Dazed</h4>
-        <p>A fast-paced pop-rock anthem that catapulted the group to global recognition.</p>
-      </div>
-
-      <div class="track-card">
-        <span>DARK BLOOD (2023)</span>
-        <h4>Bite Me</h4>
-        <p>A dark, hypnotic, signature vampire concept song with unforgettable choreography.</p>
-      </div>
-
-      <div class="track-card">
-        <span>ROMANCE : UNTOLD (2024)</span>
-        <h4>XO (Only If You Say Yes)</h4>
-        <p>A smooth, romantic pop track showing the group's mature musicality.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer>
-    <p>ENHYPEN Fanpage &copy; 2026. Made with &hearts; for ENGENEs.</p>
-  </footer>
-
-</body>
-</html>
+app.addEventListener('click',e=>{
+ const b=e.target.closest('[data-f]');
+ if(b){tog(b.dataset.f);const on=isFav(b.dataset.f);b.setAttribute('aria-pressed',on);b.textContent=on?'Saved':'Save';if(location.hash=='#saved')render();return}
+ const y=e.target.closest('[data-y]');
+ if(y){const el=document.getElementById('y'+y.dataset.y);if(el)el.scrollIntoView({behavior:RM?'auto':'smooth'})}});
+app.addEventListener('input',e=>{const d=e.target.dataset;if(!d.s)return;(d.s=='d'?F:V)[d.k]=e.target.value;d.s=='d'?grid():vlist()});
+$('#sf').addEventListener('submit',e=>{e.preventDefault();Q=$('#q').value.trim();if(location.hash=='#search')render();else location.hash='search'});
+$('#sug').innerHTML=[...A.map(a=>a[1]),...MV.map(m=>m[0]),...M.map(m=>m[1])].filter((v,i,r)=>r.indexOf(v)==i).map(v=>'<option value="'+esc(v)+'">').join('');
+addEventListener('hashchange',render);render();
+</script></body></html>
