@@ -3,1723 +3,804 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Breath of the Blade — Demon Slayer Arena</title>
+<title>Breath of the Blade 3D — Demon Slayer Arena</title>
 <style>
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#07060b;}
-  canvas{display:block;cursor:crosshair;touch-action:none;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#050308;
+    font-family:Georgia,serif;user-select:none;-webkit-user-select:none;}
+  canvas{display:block;cursor:crosshair;}
+  #hud{position:fixed;inset:0;pointer-events:none;color:#ddeeff;
+    font-family:Georgia,serif;text-shadow:0 2px 4px rgba(0,0,0,0.9);}
+  #hud.hidden{display:none;}
+  .panel{position:absolute;}
+  .topleft{top:20px;left:22px;}
+  .topright{top:20px;right:22px;text-align:right;}
+  .bottomright{bottom:20px;right:22px;text-align:right;font-size:10px;opacity:0.4;}
+  .bar-label{font-size:9px;letter-spacing:2px;opacity:0.65;margin-bottom:2px;}
+  .bar{width:260px;height:7px;background:rgba(0,0,0,0.55);
+    border:1px solid rgba(255,255,255,0.12);border-radius:4px;overflow:hidden;margin-bottom:7px;}
+  .bar-fill{height:100%;transition:width 0.08s linear;}
+  #hp-fill{background:linear-gradient(90deg,#ff2b52,#ff9a4d);}
+  #stam-fill{background:linear-gradient(90deg,#3a6bff,#7fe6ff);}
+  #breath-fill{background:linear-gradient(90deg,#1e6bff,#a8e6ff);}
+  .style-name{font-size:15px;font-weight:bold;letter-spacing:2px;margin:6px 0 2px;}
+  .style-sub{font-size:9px;opacity:0.5;letter-spacing:1px;}
+  #forms{position:absolute;bottom:20px;left:22px;font-size:11px;line-height:1.4;
+    max-height:55vh;overflow:hidden;}
+  .form-row{padding:1px 8px;border-radius:3px;margin-bottom:0;transition:background 0.1s;white-space:nowrap;}
+  .form-row.sel{background:rgba(255,255,255,0.1);border-left:3px solid currentColor;padding-left:5px;}
+  .form-row .num{opacity:0.45;display:inline-block;width:16px;}
+  .form-row .cost{opacity:0.4;font-size:9px;margin-left:8px;}
+  #wave-info{font-size:24px;font-weight:bold;margin-bottom:2px;}
+  #score{font-size:14px;color:#ffd98a;letter-spacing:1px;}
+  #chain{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
+    font-size:24px;font-weight:bold;opacity:0;}
+  #overlay{position:fixed;inset:0;background:rgba(4,3,10,0.88);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:#eaf7ff;font-family:Georgia,serif;text-align:center;}
+  #overlay.hidden{display:none;}
+  #overlay h1{font-size:56px;margin:0;letter-spacing:6px;
+    text-shadow:0 0 40px #3fa9ff,0 0 80px #1e6bff;}
+  #overlay h2{font-size:16px;font-style:italic;opacity:0.7;margin:10px 0 30px;letter-spacing:2px;}
+  #overlay .controls{font-size:13px;line-height:2;opacity:0.85;}
+  #overlay .controls b{color:#9fe6ff;}
+  #overlay .start{margin-top:30px;font-size:20px;color:#ffd98a;letter-spacing:3px;
+    animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:0.45;}50%{opacity:1;}}
+  #overlay.dead h1{color:#ffdfe6;text-shadow:0 0 40px #ff2b52;font-size:48px;}
+  #overlay.dead h2{color:#ffd98a;font-style:normal;font-size:22px;}
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<script>
-(function(){
-'use strict';
+<div id="hud" class="hidden">
+  <div class="panel topleft">
+    <div class="bar-label">HP</div>
+    <div class="bar"><div id="hp-fill" class="bar-fill" style="width:100%"></div></div>
+    <div class="bar-label">STAMINA</div>
+    <div class="bar"><div id="stam-fill" class="bar-fill" style="width:100%"></div></div>
+    <div class="bar-label">BREATHING</div>
+    <div class="bar"><div id="breath-fill" class="bar-fill" style="width:0%"></div></div>
+    <div class="style-name" id="style-name">水 WATER</div>
+    <div class="style-sub" id="style-sub">[Q] style · [1-0] form</div>
+  </div>
+  <div class="panel topright">
+    <div id="wave-info">WAVE 1</div>
+    <div id="score">0</div>
+  </div>
+  <div id="forms"></div>
+  <div id="chain"></div>
+  <div class="panel bottomright">WASD move · mouse aim · LMB/J attack · Space dash · E ult · Q style</div>
+</div>
+<div id="overlay">
+  <h1>BREATH OF THE BLADE</h1>
+  <h2>— a Demon Slayer inspired 3D arena —</h2>
+  <div class="controls">
+    <b>WASD</b> move · <b>Mouse</b> aim<br>
+    <b>Left Click / J</b> use current form · <b>1-0 / Wheel</b> pick form<br>
+    <b>Space / Shift</b> dash · <b>Q</b> switch style · <b>E</b> ultimate<br><br>
+    <span style="opacity:0.6">Water · Flame · Thunder · Wind — 30 forms</span>
+  </div>
+  <div class="start">CLICK TO BEGIN</div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
 
 const PI = Math.PI, TAU = PI * 2;
+const rand = (a,b) => a + Math.random()*(b-a);
+const clamp = (v,a,b) => v<a?a:v>b?b:v;
+const lerp = (a,b,t) => a + (b-a)*t;
+function angDiff(a,b){let d=(a-b)%TAU;if(d>PI)d-=TAU;if(d<-PI)d+=TAU;return d;}
 
-/* ================= CANVAS ================= */
-const cv = document.getElementById('game');
-const ctx = cv.getContext('2d');
-let W = 0, H = 0, DPR = 1;
+/* ================= SCENE ================= */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05030a);
+scene.fog = new THREE.FogExp2(0x05030a, 0.014);
 
-function resize(){
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = window.innerWidth; H = window.innerHeight;
-  cv.width = Math.floor(W * DPR);
-  cv.height = Math.floor(H * DPR);
-  cv.style.width = W + 'px';
-  cv.style.height = H + 'px';
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-}
-resize();
-window.addEventListener('resize', resize);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 200);
+camera.position.set(0, 18, 14);
 
-/* ================= MATH ================= */
-const rand = (a,b)=> a + Math.random()*(b-a);
-const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
-const lerp = (a,b,t)=> a + (b-a)*t;
-function angDiff(a,b){
-  let d = (a-b)%TAU;
-  if (d>PI) d-=TAU;
-  if (d<-PI) d+=TAU;
-  return d;
-}
-function rr(x,y,w,h,r){
-  if(w<0)w=0; if(h<0)h=0;
-  r = Math.min(r, w/2, h/2);
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
-  ctx.closePath();
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ================= LIGHTS ================= */
+scene.add(new THREE.AmbientLight(0x445577, 0.5));
+const moon = new THREE.DirectionalLight(0x8899ff, 0.9);
+moon.position.set(20, 40, 15);
+moon.castShadow = true;
+moon.shadow.mapSize.set(1024, 1024);
+moon.shadow.camera.left = -32;
+moon.shadow.camera.right = 32;
+moon.shadow.camera.top = 32;
+moon.shadow.camera.bottom = -32;
+scene.add(moon);
+
+const playerLight = new THREE.PointLight(0x88ccff, 2.5, 11);
+scene.add(playerLight);
+
+/* ================= ARENA ================= */
+const ARENA_R = 24;
+
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(ARENA_R, 64),
+  new THREE.MeshStandardMaterial({ color: 0x161020, roughness: 0.9, metalness: 0.05 })
+);
+ground.rotation.x = -PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const grid = new THREE.GridHelper(ARENA_R*2, 32, 0x5a3a7a, 0x2a1a3a);
+grid.position.y = 0.02;
+grid.material.opacity = 0.45;
+grid.material.transparent = true;
+scene.add(grid);
+
+const edge = new THREE.Mesh(
+  new THREE.RingGeometry(ARENA_R-0.25, ARENA_R+0.05, 64),
+  new THREE.MeshBasicMaterial({ color:0x9955dd, side:THREE.DoubleSide, transparent:true, opacity:0.55 })
+);
+edge.rotation.x = -PI/2;
+edge.position.y = 0.03;
+scene.add(edge);
+
+const torches = [];
+for (let i=0; i<8; i++){
+  const a = (i/8)*TAU;
+  const px = Math.cos(a)*(ARENA_R-2), pz = Math.sin(a)*(ARENA_R-2);
+  const pillar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.35, 0.5, 5, 6),
+    new THREE.MeshStandardMaterial({ color:0x1a1228, roughness:0.85 })
+  );
+  pillar.position.set(px, 2.5, pz);
+  pillar.castShadow = true;
+  scene.add(pillar);
+
+  const flameMat = new THREE.MeshBasicMaterial({
+    color:0xff7733, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending
+  });
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.8, 6), flameMat);
+  flame.position.set(px, 5.3, pz);
+  scene.add(flame);
+  const fl = new THREE.PointLight(0xff6633, 1.2, 8);
+  fl.position.set(px, 5, pz);
+  scene.add(fl);
+  torches.push({ flame, flameMat, light: fl, phase: Math.random()*TAU });
 }
 
-/* ================= GLOW SPRITES ================= */
-function makeGlow(rgb){
-  const c = document.createElement('canvas');
-  c.width = c.height = 64;
-  const g = c.getContext('2d');
-  const grd = g.createRadialGradient(32,32,0,32,32,32);
-  grd.addColorStop(0,   'rgba(255,255,255,0.95)');
-  grd.addColorStop(0.22,'rgba('+rgb+',0.85)');
-  grd.addColorStop(0.55,'rgba('+rgb+',0.28)');
-  grd.addColorStop(1,   'rgba('+rgb+',0)');
-  g.fillStyle = grd;
-  g.fillRect(0,0,64,64);
-  return c;
+/* ================= PARTICLES ================= */
+const MAX_P = 2500;
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_P*3), 3));
+pGeo.setAttribute('color',    new THREE.BufferAttribute(new Float32Array(MAX_P*3), 3));
+pGeo.setAttribute('size',     new THREE.BufferAttribute(new Float32Array(MAX_P), 1));
+pGeo.setAttribute('alpha',    new THREE.BufferAttribute(new Float32Array(MAX_P), 1));
+
+const pMat = new THREE.ShaderMaterial({
+  vertexShader: `
+    attribute float size; attribute float alpha; attribute vec3 color;
+    varying vec3 vColor; varying float vAlpha;
+    void main(){
+      vColor = color; vAlpha = alpha;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = size * (320.0 / -mv.z);
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    varying vec3 vColor; varying float vAlpha;
+    void main(){
+      vec2 c = gl_PointCoord - 0.5;
+      float d = length(c);
+      if(d > 0.5) discard;
+      gl_FragColor = vec4(vColor, smoothstep(0.5, 0.0, d) * vAlpha);
+    }`,
+  transparent:true, blending:THREE.AdditiveBlending, depthWrite:false
+});
+
+const pSystem = new THREE.Points(pGeo, pMat);
+pSystem.frustumCulled = false;
+scene.add(pSystem);
+
+const pData = [];
+for (let i=0; i<MAX_P; i++) pData.push({ alive:false });
+let pIdx = 0;
+
+function spawnP(x,y,z,vx,vy,vz,r,g,b,size,life,grav){
+  const p = pData[pIdx];
+  p.alive = true;
+  p.x=x; p.y=y; p.z=z;
+  p.vx=vx; p.vy=vy; p.vz=vz;
+  p.r=r; p.g=g; p.b=b;
+  p.size=size; p.life=life; p.maxLife=life; p.grav=grav||0;
+  pIdx = (pIdx+1) % MAX_P;
 }
-const SPR = {
-  fire:      makeGlow('255,140,40'),
-  fireHot:   makeGlow('255,235,150'),
-  fireDeep:  makeGlow('255,60,10'),
-  water:     makeGlow('120,220,255'),
-  waterDeep: makeGlow('40,140,255'),
-  thunder:   makeGlow('255,245,140'),
-  wind:      makeGlow('180,255,215'),
-  blood:     makeGlow('255,60,100'),
-  white:     makeGlow('255,255,255')
+
+function updateParticles(dt){
+  const pos = pGeo.attributes.position.array;
+  const col = pGeo.attributes.color.array;
+  const sz = pGeo.attributes.size.array;
+  const al = pGeo.attributes.alpha.array;
+  for (let i=0; i<MAX_P; i++){
+    const p = pData[i];
+    if (!p.alive){ sz[i]=0; al[i]=0; continue; }
+    p.life -= dt;
+    if (p.life <= 0){ p.alive=false; sz[i]=0; al[i]=0; continue; }
+    p.vy -= p.grav*dt;
+    p.x += p.vx*dt; p.y += p.vy*dt; p.z += p.vz*dt;
+    const damp = Math.exp(-2.2*dt);
+    p.vx *= damp; p.vz *= damp;
+    pos[i*3]=p.x; pos[i*3+1]=p.y; pos[i*3+2]=p.z;
+    col[i*3]=p.r; col[i*3+1]=p.g; col[i*3+2]=p.b;
+    const a = p.life/p.maxLife;
+    sz[i] = p.size * (0.3 + a*0.7);
+    al[i] = a;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+  pGeo.attributes.color.needsUpdate = true;
+  pGeo.attributes.size.needsUpdate = true;
+  pGeo.attributes.alpha.needsUpdate = true;
+}
+
+/* ================= STYLE COLORS ================= */
+const SC = {
+  water:   { r:0.5,  g:0.85, b:1.0,  r2:0.15, g2:0.55, b2:1.0  },
+  flame:   { r:1.0,  g:0.7,  b:0.2,  r2:1.0,  g2:0.28, b2:0.08 },
+  thunder: { r:1.0,  g:0.95, b:0.4,  r2:1.0,  g2:0.72, b2:0.1  },
+  wind:    { r:0.55, g:1.0,  b:0.8,  r2:0.28, g2:0.9,  b2:0.55 }
 };
 
-/* ================= INPUT ================= */
-const input = { keys:{}, mx:0, my:0, down:false };
-const pressed = new Set();
-const normKey = e => e.key.length===1 ? e.key.toLowerCase() : e.key;
+function emitStyle(style, x, y, z, dir, power, count){
+  const c = SC[style];
+  for (let i=0; i<count; i++){
+    const ang = dir + rand(-0.9, 0.9);
+    const spd = (0.5+power) * rand(2.5, 6);
+    const vx = Math.sin(ang)*spd, vz = Math.cos(ang)*spd;
+    let vy, size, life, grav;
+    const hot = Math.random() < 0.5;
+    const cr = hot?c.r:c.r2, cg = hot?c.g:c.g2, cb = hot?c.b:c.b2;
 
-window.addEventListener('keydown', e=>{
-  const k = normKey(e);
-  if(!input.keys[k]) pressed.add(k);
-  input.keys[k] = true;
-  if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+    if (style === 'water'){
+      vy = rand(1, 4.5); size = rand(0.25, 0.55); life = rand(0.5, 0.95); grav = -3;
+    } else if (style === 'flame'){
+      vy = rand(2, 5.5); size = rand(0.35, 0.75); life = rand(0.35, 0.75); grav = -1.5;
+    } else if (style === 'thunder'){
+      vy = rand(-0.5, 2.5); size = rand(0.15, 0.35); life = rand(0.12, 0.3); grav = 3;
+    } else {
+      vy = rand(0.3, 2); size = rand(0.2, 0.4); life = rand(0.28, 0.55); grav = 0.8;
+    }
+
+    spawnP(
+      x + rand(-0.2, 0.2), y + rand(0.3, 1.0), z + rand(-0.2, 0.2),
+      vx, vy, vz, cr, cg, cb, size, life, grav
+    );
+  }
+}
+
+function spawnBlood(x, y, z, dir){
+  for (let i=0; i<6; i++){
+    const a = dir + rand(-1.2, 1.2);
+    const s = rand(2, 6);
+    spawnP(x, y+0.8, z, Math.sin(a)*s, rand(1, 3), Math.cos(a)*s,
+      1.0, 0.15, 0.3, rand(0.25, 0.5), rand(0.3, 0.6), 6);
+  }
+}
+
+/* ================= PLAYER ================= */
+const playerObj = new THREE.Group();
+scene.add(playerObj);
+
+const bodyMat = new THREE.MeshStandardMaterial({ color:0x1a2535, roughness:0.55, metalness:0.25 });
+const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.7, 4, 8), bodyMat);
+body.position.y = 0.85; body.castShadow = true;
+playerObj.add(body);
+
+const headMat = new THREE.MeshStandardMaterial({ color:0x243040, roughness:0.5 });
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), headMat);
+head.position.y = 1.55; head.castShadow = true;
+playerObj.add(head);
+
+const hair = new THREE.Mesh(
+  new THREE.ConeGeometry(0.28, 0.42, 8),
+  new THREE.MeshStandardMaterial({ color:0x0a0a18, roughness:0.9 })
+);
+hair.position.y = 1.82; hair.rotation.x = PI; hair.castShadow = true;
+playerObj.add(hair);
+
+const swordGroup = new THREE.Group();
+swordGroup.position.set(0.32, 1.0, 0.15);
+playerObj.add(swordGroup);
+
+const handle = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.035, 0.035, 0.28, 8),
+  new THREE.MeshStandardMaterial({ color:0x1a0a04 })
+);
+handle.rotation.z = PI/2;
+swordGroup.add(handle);
+
+const guard = new THREE.Mesh(
+  new THREE.BoxGeometry(0.06, 0.18, 0.03),
+  new THREE.MeshStandardMaterial({ color:0xc8b06a, metalness:0.8, roughness:0.3 })
+);
+guard.position.x = 0.16;
+swordGroup.add(guard);
+
+const bladeMat = new THREE.MeshStandardMaterial({
+  color:0xeaf7ff, emissive:0x88ccff, emissiveIntensity:1.6, metalness:0.9, roughness:0.1
 });
-window.addEventListener('keyup', e=>{ input.keys[normKey(e)] = false; });
-window.addEventListener('mousemove', e=>{ input.mx = e.clientX; input.my = e.clientY; });
-cv.addEventListener('mousedown', e=>{
-  if(e.button===0){ input.down = true; pressed.add('mouse0'); }
-  if(e.button===2){ pressed.add('mouse2'); }
-  e.preventDefault();
-  initAudio();
-});
-window.addEventListener('mouseup', e=>{ if(e.button===0) input.down = false; });
-window.addEventListener('contextmenu', e=> e.preventDefault());
-window.addEventListener('blur', ()=>{ input.keys={}; input.down=false; });
-window.addEventListener('wheel', e=>{
-  if(state==='playing') selectForm(player.formIdx + (e.deltaY>0?1:-1));
-}, {passive:true});
+const blade = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.04, 0.07), bladeMat);
+blade.position.x = 0.72;
+swordGroup.add(blade);
 
-/* ================= AUDIO ================= */
-let actx = null;
-function initAudio(){
-  if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
-  if(actx && actx.state==='suspended') actx.resume();
-}
-function sfx(freq,dur,type,vol,slideTo){
-  if(!actx) return;
-  const t = actx.currentTime;
-  const o = actx.createOscillator(), g = actx.createGain();
-  o.type = type||'sine';
-  o.frequency.setValueAtTime(freq,t);
-  if(slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30,slideTo), t+dur);
-  g.gain.setValueAtTime(0.0001,t);
-  g.gain.exponentialRampToValueAtTime(vol||0.07, t+0.008);
-  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
-  o.connect(g); g.connect(actx.destination);
-  o.start(t); o.stop(t+dur+0.02);
-}
-function sfxNoise(dur,vol,freq){
-  if(!actx) return;
-  const t = actx.currentTime;
-  const len = Math.floor(actx.sampleRate*dur);
-  const buf = actx.createBuffer(1,len,actx.sampleRate);
-  const d = buf.getChannelData(0);
-  for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*(1-i/len);
-  const src = actx.createBufferSource(); src.buffer = buf;
-  const f = actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value = freq||1800;
-  const g = actx.createGain(); g.gain.value = vol||0.1;
-  src.connect(f); f.connect(g); g.connect(actx.destination);
-  src.start(t);
-}
-function sfxStyle(style){
-  if(style==='water'){ sfx(520+rand(-50,60),0.14,'sine',0.05,980); sfxNoise(0.12,0.045,2600); }
-  else if(style==='flame'){ sfx(190,0.2,'sawtooth',0.06,85); sfxNoise(0.18,0.07,900); }
-  else if(style==='thunder'){ sfxNoise(0.09,0.09,4200); sfx(1250,0.06,'square',0.03,380); }
-  else { sfxNoise(0.16,0.07,1500); sfx(720,0.1,'sine',0.03,1500); }
-}
+/* ================= AIM INDICATOR ================= */
+const aimRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.28, 0.4, 24),
+  new THREE.MeshBasicMaterial({ color:0x88ccff, side:THREE.DoubleSide, transparent:true, opacity:0.7 })
+);
+aimRing.rotation.x = -PI/2;
+aimRing.position.y = 0.05;
+scene.add(aimRing);
 
-/* ================= STATE ================= */
-let state = 'title';
-let gameTime = 0, shake = 0, hitStop = 0, flashAlpha = 0, deathTimer = 0, bestScore = 0;
+/* ================= PLAYER STATE ================= */
 let player = null;
-let demons = [], particles = [], slashes = [], texts = [], telegraphs = [];
-let projectiles = [], rings = [], bolts = [], scheduled = [], ambient = [];
-let wave = 0, waveState = 'idle', waveTimer = 0, score = 0, kills = 0;
 
-const STYLE_ORDER = ['water','flame','thunder','wind'];
+function resetPlayer(){
+  player = {
+    x:0, z:0, vx:0, vz:0,
+    hp:100, maxHp:100,
+    stamina:100, maxStamina:100, stamDelay:0,
+    breathing:0,
+    aim:0,
+    atkCd:0, dashT:0, dashCd:0, dashDir:0,
+    invuln:0, hurtFlash:0, ultLock:0,
+    style:'water', formIdx:0,
+    chain:0, chainT:0, swingT:0
+  };
+}
+
+/* ================= DEMONS ================= */
+let demons = [];
 
 const TYPES = {
-  grunt: { r:15, hp:40,  speed:108, dmg:9,  color:'#6a2a8a', score:100 },
-  swift: { r:11, hp:26,  speed:205, dmg:6,  color:'#b03a6a', score:130 },
-  brute: { r:25, hp:155, speed:74,  dmg:18, color:'#8a2a2a', score:260 },
-  boss:  { r:42, hp:700, speed:88,  dmg:26, color:'#c8183a', score:1200 }
+  grunt: { r:0.55, hp:40,  speed:5.5, dmg:9,  color:0x6a2a8a, score:100 },
+  swift: { r:0.42, hp:26,  speed:9,   dmg:6,  color:0xb03a6a, score:130 },
+  brute: { r:0.9,  hp:155, speed:3.8, dmg:18, color:0x8a2a2a, score:260 },
+  boss:  { r:1.5,  hp:700, speed:4.4, dmg:26, color:0xc8183a, score:1200 }
 };
 
-/* ================= FX EMITTERS ================= */
-function addParticle(p){
-  if(particles.length > 1400) particles.splice(0, particles.length-1400);
-  particles.push(p);
-}
+function createDemonMesh(type){
+  const t = TYPES[type];
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({
+    color: t.color, emissive: new THREE.Color(t.color).multiplyScalar(0.15),
+    roughness: 0.55, metalness: 0.2
+  });
+  mat.userData.baseColor = new THREE.Color(t.color);
+  mat.userData.baseEmissive = mat.emissive.clone();
 
-function emitStyle(style, x, y, dir, power, count){
-  const n = count!==undefined ? count : Math.round(4 + power*10);
-  for(let i=0;i<n;i++){
-    const a = dir + rand(-1.25,1.25);
-
-    if(style==='water'){
-      const s = rand(40,200)*(0.5+power);
-      addParticle({
-        kind:'bubble', x:x+rand(-9,9), y:y+rand(-9,9),
-        vx:Math.cos(a)*s*0.6, vy:Math.sin(a)*s*0.6 - rand(15,75),
-        life:rand(0.4,0.95), max:0.95,
-        size:rand(1.8,6), color:'#cfeeff', seed:rand(0,TAU)
-      });
-      if(Math.random()<0.45){
-        addParticle({
-          kind:'glow', spr: Math.random()<0.4?SPR.waterDeep:SPR.water,
-          x:x, y:y, vx:Math.cos(a)*s*0.4, vy:Math.sin(a)*s*0.4,
-          life:rand(0.18,0.36), max:0.36, size:rand(12,30), additive:true
-        });
-      }
-    } else if(style==='flame'){
-      const s = rand(70,280)*(0.5+power);
-      const r = Math.random();
-      addParticle({
-        kind:'glow', spr: r<0.3?SPR.fireHot:(r<0.75?SPR.fire:SPR.fireDeep),
-        x:x, y:y, vx:Math.cos(a)*s*0.5, vy:Math.sin(a)*s*0.5 - rand(25,100),
-        life:rand(0.22,0.6), max:0.6, size:rand(11,32), additive:true
-      });
-    } else if(style==='thunder'){
-      const s = rand(140,460)*(0.5+power);
-      addParticle({
-        kind:'spark', x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s,
-        life:rand(0.09,0.26), max:0.26, size:rand(1,2.8), color:'#fff6b0'
-      });
-      if(Math.random()<0.25){
-        addParticle({kind:'glow', spr:SPR.thunder, x:x, y:y, vx:0, vy:0, life:0.14, max:0.14, size:rand(16,30), additive:true});
-      }
-    } else {
-      const s = rand(90,340)*(0.5+power);
-      addParticle({
-        kind:'spark', x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s,
-        life:rand(0.12,0.32), max:0.32, size:rand(1,2.6), color:'#d9ffe6'
-      });
-      if(Math.random()<0.2){
-        addParticle({kind:'glow', spr:SPR.wind, x:x, y:y, vx:Math.cos(a)*s*0.3, vy:Math.sin(a)*s*0.3, life:0.25, max:0.25, size:rand(14,28), additive:true});
-      }
+  if (type === 'boss'){
+    const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.9, 1.5, 4, 10), mat);
+    b.position.y = 2.2; b.castShadow = true; g.add(b);
+    for (let i of [-1, 1]){
+      const horn = new THREE.Mesh(
+        new THREE.ConeGeometry(0.15, 0.8, 6),
+        new THREE.MeshStandardMaterial({ color:0x150005 })
+      );
+      horn.position.set(i*0.4, 3.4, 0);
+      g.add(horn);
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 8, 8),
+        new THREE.MeshBasicMaterial({ color:0xffdd44 })
+      );
+      eye.position.set(i*0.3, 2.9, 0.65);
+      g.add(eye);
+    }
+  } else if (type === 'brute'){
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 12), mat);
+    b.position.y = 1.1; b.scale.y = 1.35; b.castShadow = true; g.add(b);
+    for (let i of [-1, 1]){
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.7, 4, 6), mat);
+      arm.position.set(i*0.85, 1.0, 0);
+      arm.rotation.z = i*0.35;
+      arm.castShadow = true;
+      g.add(arm);
+    }
+  } else if (type === 'swift'){
+    const b = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.4, 6), mat);
+    b.position.y = 0.7; b.castShadow = true; g.add(b);
+  } else {
+    const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 0.7, 4, 8), mat);
+    b.position.y = 0.9; b.castShadow = true; g.add(b);
+    for (let i of [-1, 1]){
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 6, 6),
+        new THREE.MeshBasicMaterial({ color:0xff3344 })
+      );
+      eye.position.set(i*0.15, 1.15, 0.32);
+      g.add(eye);
     }
   }
+
+  g.userData.mat = mat;
+  return g;
 }
 
-function spawnBlood(x,y,dir){
-  for(let i=0;i<7;i++){
-    const a = dir + rand(-1,1), s = rand(90,330);
-    addParticle({kind:'glow', spr:SPR.blood, x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:rand(0.2,0.45), max:0.45, size:rand(10,22), additive:true});
+function makeDemon(type, x, z){
+  const t = TYPES[type];
+  const hpScale = 1 + (wave-1)*0.14;
+  const spScale = 1 + Math.min(wave-1, 12)*0.025;
+  const mesh = createDemonMesh(type);
+  mesh.position.set(x, 0, z);
+  scene.add(mesh);
+  return {
+    type, x, z, vx:0, vz:0, r:t.r,
+    hp:t.hp*hpScale, maxHp:t.hp*hpScale,
+    speed:t.speed*spScale, dmg:t.dmg,
+    score:t.score, seed:rand(0, 100),
+    hitFlash:0, stun:0, atkCd:0,
+    chargeCd:2.5, windup:0, charging:0,
+    cdx:0, cdz:0, mesh, dead:false
+  };
+}
+
+/* ================= EFFECTS POOLS ================= */
+const slashes = [];
+const rings = [];
+const projectiles = [];
+const bolts = [];
+const telegraphs = [];
+const scheduled = [];
+
+function spawnSlashArc(px, pz, dir, range, arc, style){
+  const c = SC[style];
+  const seg = 20;
+  const positions = [], indices = [];
+  for (let i=0; i<=seg; i++){
+    const t = i/seg;
+    const a = dir - arc/2 + arc*t;
+    const s = Math.sin(a), co = Math.cos(a);
+    positions.push(px + s*range, 1.0, pz + co*range);
+    positions.push(px + s*range*0.45, 1.35, pz + co*range*0.45);
   }
-}
-
-function makeBolt(x1,y1,x2,y2,rgb,jag,life){
-  const segs = [], n = 9;
-  for(let i=1;i<=n;i++){
-    const t = i/n, j = i===n ? 0 : jag;
-    segs.push([lerp(x1,x2,t)+rand(-j,j), lerp(y1,y2,t)+rand(-j,j)]);
+  for (let i=0; i<seg; i++){
+    const b = i*2;
+    indices.push(b, b+2, b+1, b+1, b+2, b+3);
   }
-  bolts.push({x1,y1,segs,life,max:life,rgb});
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(c.r, c.g, c.b),
+    transparent:true, opacity:0.85, side:THREE.DoubleSide,
+    blending:THREE.AdditiveBlending, depthWrite:false
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+  slashes.push({ mesh, mat, life:0.28, max:0.28 });
 }
 
-function addText(x,y,txt,color,size){
-  texts.push({x,y,txt,color,life:0.75,max:0.75,size:size||15});
+function spawnRingFx(px, pz, radius, style){
+  const c = SC[style];
+  const geo = new THREE.RingGeometry(radius-0.35, radius, 40);
+  const mat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(c.r, c.g, c.b),
+    transparent:true, opacity:0.9, side:THREE.DoubleSide,
+    blending:THREE.AdditiveBlending, depthWrite:false
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -PI/2;
+  mesh.position.set(px, 0.1, pz);
+  scene.add(mesh);
+  rings.push({ mesh, mat, life:0.45, max:0.45 });
 }
-function schedule(delay, fn){ scheduled.push({t:delay, fn}); }
 
-/* ================= DAMAGE QUERIES ================= */
-function demonsInArc(px,py,dir,range,arc){
+function spawnProjectile(px, pz, dir, style, speed, dmg, r, life){
+  const c = SC[style];
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(r*0.5, 12, 12),
+    new THREE.MeshBasicMaterial({ color:new THREE.Color(c.r, c.g, c.b),
+      blending:THREE.AdditiveBlending, transparent:true, opacity:0.95 })
+  );
+  mesh.position.set(px, 1.2, pz);
+  scene.add(mesh);
+  projectiles.push({
+    mesh, x:px, z:pz, y:1.2, vx:Math.sin(dir)*speed, vz:Math.cos(dir)*speed,
+    dir, r, dmg, style, life, maxLife:life, hit:new Set()
+  });
+}
+
+function spawnBolt(x1, z1, x2, z2, style, jag, life){
+  const c = SC[style];
+  const pts = [];
+  const n = 10;
+  for (let i=0; i<=n; i++){
+    const t = i/n, j = i===n?0:jag;
+    pts.push(new THREE.Vector3(
+      lerp(x1, x2, t) + rand(-j, j),
+      1.2 + rand(-j*0.3, j*0.3),
+      lerp(z1, z2, t) + rand(-j, j)
+    ));
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({
+    color: new THREE.Color(c.r, c.g, c.b), transparent:true, opacity:1,
+    blending:THREE.AdditiveBlending, linewidth:2
+  });
+  const line = new THREE.Line(geo, mat);
+  scene.add(line);
+  bolts.push({ line, mat, life, max:life });
+}
+
+/* ================= FORM HELPERS ================= */
+function demonsInArc(px, pz, dir, range, arc){
   const out = [];
-  for(const d of demons){
-    if(d.dead) continue;
-    const dx = d.x-px, dy = d.y-py;
-    const dist = Math.hypot(dx,dy);
-    if(dist < range + d.r && Math.abs(angDiff(Math.atan2(dy,dx), dir)) < arc/2) out.push(d);
+  for (const d of demons){
+    if (d.dead) continue;
+    const dx = d.x-px, dz = d.z-pz;
+    const dist = Math.hypot(dx, dz);
+    if (dist > range + d.r) continue;
+    if (Math.abs(angDiff(Math.atan2(dx, dz), dir)) < arc/2) out.push(d);
   }
   return out;
 }
-function demonsInRadius(px,py,r){
+function demonsInRadius(px, pz, radius){
   const out = [];
-  for(const d of demons){
-    if(d.dead) continue;
-    if(Math.hypot(d.x-px, d.y-py) < r + d.r) out.push(d);
+  for (const d of demons){
+    if (d.dead) continue;
+    if (Math.hypot(d.x-px, d.z-pz) < radius + d.r) out.push(d);
+  }
+  return out;
+}
+function demonsInLine(px, pz, dir, length, width){
+  const ux = Math.sin(dir), uz = Math.cos(dir);
+  const out = [];
+  for (const d of demons){
+    if (d.dead) continue;
+    const dx = d.x-px, dz = d.z-pz;
+    const t = dx*ux + dz*uz;
+    if (t < -d.r || t > length + d.r) continue;
+    const perpX = dx - ux*t, perpZ = dz - uz*t;
+    if (Math.hypot(perpX, perpZ) < width/2 + d.r) out.push(d);
   }
   return out;
 }
 
-function damageDemon(d,dmg,dir,knock){
-  if(d.dead) return;
+/* ================= DAMAGE ================= */
+function damageDemon(d, dmg, dir, knock){
+  if (d.dead) return;
   d.hp -= dmg;
   d.hitFlash = 1;
-  d.stun = Math.max(d.stun, 0.09);
-  const k = (knock||1) * (d.type==='boss'?0.25 : d.type==='brute'?0.5 : 1);
-  d.vx += Math.cos(dir)*300*k;
-  d.vy += Math.sin(dir)*300*k;
-
+  d.stun = Math.max(d.stun, 0.1);
+  const k = (knock||1) * (d.type==='boss'?0.25:d.type==='brute'?0.5:1);
+  d.vx += Math.sin(dir)*4*k;
+  d.vz += Math.cos(dir)*4*k;
   player.breathing = Math.min(100, player.breathing + dmg*0.16);
   player.chain++;
   player.chainT = 1.1;
-
-  addText(d.x+rand(-8,8), d.y-d.r-4, Math.round(dmg), d.hp<=0?'#ffe28a':'#ffd0d0');
-  spawnBlood(d.x,d.y,dir);
-  if(d.hp<=0) killDemon(d);
+  spawnBlood(d.x, 0.5, d.z, dir);
+  if (d.hp <= 0) killDemon(d);
 }
 
 function killDemon(d){
   d.dead = true;
   kills++;
   score += d.score;
-  const big = d.type==='boss';
-  const n = big?55:18;
-  for(let i=0;i<n;i++){
-    const a = Math.random()*TAU, s = rand(60, big?420:260);
-    addParticle({
-      kind:'glow', spr: Math.random()<0.5?SPR.blood:SPR.white,
-      x:d.x, y:d.y, vx:Math.cos(a)*s, vy:Math.sin(a)*s,
-      life:rand(0.3,0.9), max:0.9, size:rand(8, big?30:18), additive:true
-    });
+  const c = SC[player.style];
+  const n = d.type==='boss'?55:20;
+  for (let i=0; i<n; i++){
+    const a = Math.random()*TAU, s = rand(2, 8);
+    spawnP(d.x, rand(0.4, 2), d.z, Math.sin(a)*s, rand(0.5, 4), Math.cos(a)*s,
+      1, 0.2, 0.35, rand(0.25, 0.6), rand(0.3, 0.9), 3);
   }
-  if(big){
-    rings.push({x:d.x,y:d.y,r:10,maxR:420,life:0.85,max:0.85,color:'#ff3b5c'});
-    shake = 24; hitStop = 0.13;
-    sfx(120,0.85,'sawtooth',0.12,40);
+  if (d.type === 'boss'){
+    shake = 22; hitStop = 0.13;
+    spawnRingFx(d.x, d.z, 3, 'water');
+    spawnRingFx(d.x, d.z, 6, 'water');
+    sfx(110, 0.9, 'sawtooth', 0.13, 40);
   } else {
     hitStop = Math.max(hitStop, 0.035);
-    sfx(300,0.15,'triangle',0.05,90);
+    sfx(280, 0.14, 'triangle', 0.05, 90);
   }
+  scene.remove(d.mesh);
 }
 
-/* ================= FORM ARCHETYPES ================= */
-function arcStrike(p,o){
-  const st = STYLES[p.style], dir = p.aim;
-  const hits = o.hits||1, spread = o.spread||0, arc = o.arc||PI, range = o.range||100;
-
-  for(let i=0;i<hits;i++){
+/* ================= STYLES / FORMS ================= */
+function formArc(p, o){
+  const dir = p.aim;
+  const hits = o.hits || 1, spread = o.spread || 0;
+  const arc = o.arc || PI, range = o.range || 4.5;
+  for (let i=0; i<hits; i++){
     const a = dir + (hits>1 ? (i-(hits-1)/2)*spread : 0);
-    slashes.push({
-      x:p.x, y:p.y, dir:a, arc, range,
-      life:0.22, max:0.22, color:st.color, style:p.style, heavy:!!o.heavy
-    });
-    for(const d of demonsInArc(p.x,p.y,a,range,arc)) damageDemon(d,o.dmg,a,o.knock||1);
+    spawnSlashArc(p.x, p.z, a, range, arc, p.style);
+    for (let k=0; k<16; k++){
+      const t = k/16;
+      const aa = a - arc/2 + arc*t;
+      const rr = range * rand(0.5, 0.95);
+      emitStyle(p.style, p.x + Math.sin(aa)*rr, 0.9, p.z + Math.cos(aa)*rr, a, 0.5, 1);
+    }
+    for (const d of demonsInArc(p.x, p.z, a, range, arc)) damageDemon(d, o.dmg, a, o.knock||1);
+    if (p.style==='thunder' && Math.random()<0.6)
+      spawnBolt(p.x, p.z, p.x+Math.sin(a)*range, p.z+Math.cos(a)*range, 'thunder', 0.6, 0.16);
   }
-  for(let k=0;k<4;k++){
-    const aa = dir + rand(-arc/2, arc/2);
-    const r2 = range*rand(0.6,1.05);
-    emitStyle(p.style, p.x+Math.cos(aa)*r2, p.y+Math.sin(aa)*r2, aa, 0.5, 3);
-  }
-  if(p.style==='thunder' && Math.random()<0.6){
-    makeBolt(p.x,p.y, p.x+Math.cos(dir)*range, p.y+Math.sin(dir)*range, '255,240,130', 16, 0.16);
-  }
-  const lunge = o.lunge!==undefined ? o.lunge : 150;
-  p.vx += Math.cos(dir)*lunge;
-  p.vy += Math.sin(dir)*lunge;
-  shake = Math.max(shake, o.shake||3);
+  const lunge = o.lunge !== undefined ? o.lunge : 2;
+  p.vx += Math.sin(dir)*lunge;
+  p.vz += Math.cos(dir)*lunge;
+  shake = Math.max(shake, o.shake || 3);
   sfxStyle(p.style);
 }
 
-function ringStrike(p,o){
-  const st = STYLES[p.style], radius = o.radius||110;
-
-  if(o.pull){
-    for(const d of demonsInRadius(p.x,p.y,radius*1.5)){
-      if(d.type==='boss') continue;
-      const a = Math.atan2(p.y-d.y, p.x-d.x);
-      d.vx += Math.cos(a)*420;
-      d.vy += Math.sin(a)*420;
+function formRing(p, o){
+  const radius = o.radius || 4.5;
+  if (o.pull){
+    for (const d of demonsInRadius(p.x, p.z, radius*1.5)){
+      if (d.type === 'boss') continue;
+      const a = Math.atan2(p.x-d.x, p.z-d.z);
+      d.vx += Math.sin(a)*4.5;
+      d.vz += Math.cos(a)*4.5;
     }
-    emitStyle(p.style, p.x, p.y, 0, 0.8, 12);
+    emitStyle(p.style, p.x, 1, p.z, 0, 0.8, 12);
   }
-  for(const d of demonsInRadius(p.x,p.y,radius)){
-    const a = Math.atan2(d.y-p.y, d.x-p.x);
-    damageDemon(d,o.dmg,a,o.knock||1.2);
+  for (const d of demonsInRadius(p.x, p.z, radius)){
+    const a = Math.atan2(d.x-p.x, d.z-p.z);
+    damageDemon(d, o.dmg, a, o.knock||1.2);
   }
-  rings.push({x:p.x,y:p.y,r:18,maxR:radius,life:0.42,max:0.42,color:st.glow});
-  for(let k=0;k<10;k++){
+  spawnRingFx(p.x, p.z, radius, p.style);
+  for (let k=0; k<12; k++){
     const a = Math.random()*TAU;
-    emitStyle(p.style, p.x+Math.cos(a)*radius*0.85, p.y+Math.sin(a)*radius*0.85, a, 0.45, 2);
+    emitStyle(p.style, p.x+Math.sin(a)*radius*0.85, 0.9, p.z+Math.cos(a)*radius*0.85, a, 0.4, 1);
   }
-  if(p.style==='thunder'){
-    for(let k=0;k<5;k++){
+  if (p.style === 'thunder'){
+    for (let k=0; k<5; k++){
       const a = Math.random()*TAU;
-      makeBolt(p.x,p.y, p.x+Math.cos(a)*radius, p.y+Math.sin(a)*radius, '255,240,130', 18, 0.2);
+      spawnBolt(p.x, p.z, p.x+Math.sin(a)*radius, p.z+Math.cos(a)*radius, 'thunder', 0.8, 0.2);
     }
   }
-  shake = Math.max(shake, o.shake||6);
+  shake = Math.max(shake, o.shake || 6);
   sfxStyle(p.style);
 }
 
-function dashStrike(p,o){
-  const st = STYLES[p.style], dir = p.aim;
-  const dist = o.dist||240, width = o.width||44;
-  const ux = Math.cos(dir), uy = Math.sin(dir);
-  const x1 = p.x, y1 = p.y;
-  const x2 = x1+ux*dist, y2 = y1+uy*dist;
-
-  for(const d of demons){
-    if(d.dead) continue;
-    const t = clamp(((d.x-x1)*ux + (d.y-y1)*uy)/dist, 0, 1);
-    const cx = x1+ux*dist*t, cy = y1+uy*dist*t;
-    if(Math.hypot(d.x-cx, d.y-cy) < width/2 + d.r) damageDemon(d,o.dmg,dir,o.knock||1.2);
+function formDash(p, o){
+  const dir = p.aim;
+  const dist = o.dist || 8, width = o.width || 2;
+  const ux = Math.sin(dir), uz = Math.cos(dir);
+  const x1 = p.x, z1 = p.z;
+  const x2 = x1 + ux*dist, z2 = z1 + uz*dist;
+  for (const d of demons){
+    if (d.dead) continue;
+    const t = clamp(((d.x-x1)*ux + (d.z-z1)*uz) / dist, 0, 1);
+    const cx = x1 + ux*dist*t, cz = z1 + uz*dist*t;
+    if (Math.hypot(d.x-cx, d.z-cz) < width/2 + d.r) damageDemon(d, o.dmg, dir, o.knock||1.2);
   }
-  for(let i=0;i<=10;i++){
+  for (let i=0; i<=10; i++){
     const t = i/10;
-    emitStyle(p.style, lerp(x1,x2,t), lerp(y1,y2,t), dir, 0.6, 3);
+    emitStyle(p.style, lerp(x1, x2, t), 1, lerp(z1, z2, t), dir, 0.6, 2);
   }
-  slashes.push({
-    x:x1,y:y1,dir,arc:PI*0.55,range:dist*0.75,
-    life:0.3,max:0.3,color:st.color,style:p.style,heavy:true,streak:true
-  });
-  if(p.style==='thunder') makeBolt(x1,y1,x2,y2,'255,245,150',22,0.22);
+  spawnSlashArc(x1, z1, dir, dist*0.75, PI*0.55, p.style);
+  if (p.style === 'thunder') spawnBolt(x1, z1, x2, z2, 'thunder', 1.2, 0.22);
 
   p.dashDir = dir;
-  p.dashT = dist/900;
-  p.invuln = Math.max(p.invuln, o.iframes||0.18);
-  shake = Math.max(shake, o.shake||6);
+  p.dashT = dist/22;
+  p.invuln = Math.max(p.invuln, o.iframes || 0.18);
+  shake = Math.max(shake, o.shake || 6);
   sfxStyle(p.style);
 }
 
-function lineStrike(p,o){
-  const st = STYLES[p.style], dir = p.aim;
-  const len = o.len||200, width = o.width||26;
-  const ux = Math.cos(dir), uy = Math.sin(dir);
-  const x1 = p.x, y1 = p.y;
-
-  for(const d of demons){
-    if(d.dead) continue;
-    const t = clamp(((d.x-x1)*ux + (d.y-y1)*uy)/len, 0, 1);
-    const cx = x1+ux*len*t, cy = y1+uy*len*t;
-    if(Math.hypot(d.x-cx, d.y-cy) < width/2 + d.r) damageDemon(d,o.dmg,dir,o.knock||1.5);
+function formLine(p, o){
+  const dir = p.aim;
+  const len = o.len || 7, width = o.width || 1.4;
+  const ux = Math.sin(dir), uz = Math.cos(dir);
+  const x1 = p.x, z1 = p.z;
+  for (const d of demonsInLine(x1, z1, dir, len, width)) damageDemon(d, o.dmg, dir, o.knock||1.5);
+  for (let i=0; i<=10; i++){
+    const t = i/10;
+    emitStyle(p.style, x1+ux*len*t, 1, z1+uz*len*t, dir, 0.45, 2);
   }
-  slashes.push({
-    x:x1,y:y1,dir,arc:0.34,range:len,
-    life:0.26,max:0.26,color:st.color,style:p.style,heavy:true,thrust:true
-  });
-  for(let i=0;i<=8;i++){
-    const t = i/8;
-    emitStyle(p.style, x1+ux*len*t, y1+uy*len*t, dir, 0.45, 2);
-  }
-  p.vx += ux*200; p.vy += uy*200;
+  spawnSlashArc(x1, z1, dir, len, 0.35, p.style);
+  p.vx += ux*3; p.vz += uz*3;
   shake = Math.max(shake, 4);
   sfxStyle(p.style);
 }
 
-function multiStrike(p,o){
-  const ticks = o.ticks||5, interval = o.interval||0.1;
-  for(let i=0;i<ticks;i++){
-    schedule(i*interval, ()=>{
-      const list = demonsInRadius(p.x,p.y,o.radius);
-      for(const d of list) damageDemon(d,o.dmg, Math.atan2(d.y-p.y,d.x-p.x), o.knock||1.2);
-      const st = STYLES[p.style];
-      rings.push({x:p.x,y:p.y,r:22,maxR:o.radius,life:0.3,max:0.3,color:st.glow});
-      for(let k=0;k<8;k++){
+function formMulti(p, o){
+  const ticks = o.ticks || 5, interval = o.interval || 0.1;
+  for (let i=0; i<ticks; i++){
+    scheduled.push({ t: i*interval, fn: () => {
+      const list = demonsInRadius(p.x, p.z, o.radius);
+      for (const d of list) damageDemon(d, o.dmg, Math.atan2(d.x-p.x, d.z-p.z), o.knock||1.2);
+      spawnRingFx(p.x, p.z, o.radius, p.style);
+      for (let k=0; k<10; k++){
         const a = Math.random()*TAU;
-        emitStyle(p.style, p.x+Math.cos(a)*o.radius*0.8, p.y+Math.sin(a)*o.radius*0.8, a, 0.4, 2);
+        emitStyle(p.style, p.x+Math.sin(a)*o.radius*0.8, 0.9, p.z+Math.cos(a)*o.radius*0.8, a, 0.4, 2);
       }
       shake = Math.max(shake, 4);
       sfxStyle(p.style);
-    });
+    }});
   }
 }
 
-function shootProj(p,o){
-  const dir = p.aim;
-  projectiles.push({
-    x:p.x+Math.cos(dir)*26, y:p.y+Math.sin(dir)*26,
-    vx:Math.cos(dir)*(o.speed||640), vy:Math.sin(dir)*(o.speed||640),
-    r:o.r||28, dmg:o.dmg, life:o.life||1.15, maxLife:o.life||1.15,
-    style:p.style, hit:new Set()
-  });
-  p.vx -= Math.cos(dir)*120;
-  p.vy -= Math.sin(dir)*120;
-  emitStyle(p.style, p.x+Math.cos(dir)*30, p.y+Math.sin(dir)*30, dir, 0.7, 10);
+function formProj(p, o){
+  spawnProjectile(p.x, p.z, p.aim, p.style, o.speed || 22, o.dmg, o.r || 1.0, o.life || 1.2);
+  p.vx -= Math.sin(p.aim)*2;
+  p.vz -= Math.cos(p.aim)*2;
+  emitStyle(p.style, p.x+Math.sin(p.aim)*0.8, 1, p.z+Math.cos(p.aim)*0.8, p.aim, 0.7, 8);
   shake = Math.max(shake, 5);
   sfxStyle(p.style);
 }
 
-const A  = o => p => arcStrike(p,o);
-const R  = o => p => ringStrike(p,o);
-const D  = o => p => dashStrike(p,o);
-const L  = o => p => lineStrike(p,o);
-const M  = o => p => multiStrike(p,o);
-const PR = o => p => shootProj(p,o);
+const A = o => p => formArc(p, o);
+const R = o => p => formRing(p, o);
+const Dh = o => p => formDash(p, o);
+const Ln = o => p => formLine(p, o);
+const Mu = o => p => formMulti(p, o);
+const Pr = o => p => formProj(p, o);
 
-/* ================= BREATHING STYLES (canon forms) ================= */
+/* ================= BREATHING STYLES ================= */
 const STYLES = {
-
-  /* ---------- WATER: 10 combat forms + 11th ult ---------- */
   water: {
     key:'water', name:'WATER', kanji:'水',
-    color:'#c7f0ff', glow:'#3fa9ff',
     forms: [
-      {name:'Water Surface Slash', cost:10, cd:0.18, run:A({dmg:22, range:108, arc:1.35*PI, knock:1.1, lunge:175})},
-      {name:'Water Wheel',         cost:16, cd:0.45, run:R({dmg:26, radius:94,  knock:1.4})},
-      {name:'Flowing Dance',       cost:20, cd:0.60, run:D({dmg:42, dist:250, width:50, iframes:0.22, knock:1.2})},
-      {name:'Striking Tide',       cost:22, cd:0.55, run:A({dmg:14, range:126, arc:1.15*PI, hits:3, spread:0.55, knock:1})},
-      {name:'Blessed Rain After the Drought', cost:26, cd:0.80, run:L({dmg:60, len:175, width:36, knock:2.2})},
-      {name:'Whirlpool',           cost:28, cd:0.85, run:R({dmg:34, radius:128, knock:1.6, pull:true})},
-      {name:'Drop Ripple Thrust',  cost:18, cd:0.50, run:L({dmg:44, len:240, width:20, knock:1.4})},
-      {name:'Waterfall Basin',     cost:30, cd:0.90, run:A({dmg:48, range:152, arc:0.95*PI, knock:2.4, heavy:true})},
-      {name:'Splashing Water Flow',cost:22, cd:0.70, run:D({dmg:30, dist:300, width:44, iframes:0.34, knock:1.3})},
-      {name:'Constant Flux',       cost:40, cd:1.20, run:M({dmg:15, ticks:6, interval:0.10, radius:118, knock:1.3})}
+      { name:'Water Surface Slash', cost:10, cd:0.18, run: A({ dmg:22, range:4.5, arc:1.35*PI, knock:1.1, lunge:2.5 }) },
+      { name:'Water Wheel',         cost:16, cd:0.45, run: R({ dmg:26, radius:4,  knock:1.4 }) },
+      { name:'Flowing Dance',       cost:20, cd:0.60, run: Dh({ dmg:42, dist:9,  width:2.2, iframes:0.22, knock:1.2 }) },
+      { name:'Striking Tide',       cost:22, cd:0.55, run: A({ dmg:14, range:5, arc:1.15*PI, hits:3, spread:0.55, knock:1 }) },
+      { name:'Blessed Rain After the Drought', cost:26, cd:0.80, run: Ln({ dmg:60, len:7, width:1.5, knock:2.2 }) },
+      { name:'Whirlpool',           cost:28, cd:0.85, run: R({ dmg:34, radius:5.5, knock:1.6, pull:true }) },
+      { name:'Drop Ripple Thrust',  cost:18, cd:0.50, run: Ln({ dmg:44, len:9, width:0.9, knock:1.4 }) },
+      { name:'Waterfall Basin',     cost:30, cd:0.90, run: A({ dmg:48, range:6, arc:0.95*PI, knock:2.4, heavy:true }) },
+      { name:'Splashing Water Flow',cost:22, cd:0.70, run: Dh({ dmg:30, dist:11, width:2, iframes:0.34, knock:1.3 }) },
+      { name:'Constant Flux',       cost:40, cd:1.20, run: Mu({ dmg:15, ticks:6, interval:0.10, radius:4.5, knock:1.3 }) }
     ],
-    ult: {
-      name:'Dead Calm', num:'11th Form',
-      run(p){
-        p.invuln = Math.max(p.invuln, 0.7);
-        for(const d of demonsInRadius(p.x,p.y,230))
-          damageDemon(d, 100, Math.atan2(d.y-p.y,d.x-p.x), 3);
-        for(let i=0;i<3;i++){
-          schedule(i*0.11, ()=>{
-            rings.push({x:p.x,y:p.y,r:24,maxR:230+i*45,life:0.6,max:0.6,color:'#a8e6ff'});
-            rings.push({x:p.x,y:p.y,r:20,maxR:200+i*40,life:0.5,max:0.5,color:'#ffffff'});
-          });
-        }
-        for(let i=0;i<46;i++){
-          const a = Math.random()*TAU, s = rand(120,520);
-          addParticle({kind:'bubble', x:p.x, y:p.y, vx:Math.cos(a)*s, vy:Math.sin(a)*s-rand(20,120), life:rand(0.5,1.1), max:1.1, size:rand(2,7), color:'#dff6ff', seed:rand(0,TAU)});
-          addParticle({kind:'glow', spr:SPR.water, x:p.x, y:p.y, vx:Math.cos(a)*s*0.7, vy:Math.sin(a)*s*0.7, life:rand(0.3,0.7), max:0.7, size:rand(14,38), additive:true});
-        }
-        shake = 20; hitStop = 0.1; flashAlpha = 0.24;
-        sfx(300,0.7,'sine',0.1,900); sfxNoise(0.6,0.1,1200);
+    ult: { name:'Dead Calm', num:'11th Form', run: p => {
+      p.invuln = Math.max(p.invuln, 0.7);
+      for (const d of demonsInRadius(p.x, p.z, 9)) damageDemon(d, 100, Math.atan2(d.x-p.x, d.z-p.z), 3);
+      for (let i=0; i<3; i++){
+        scheduled.push({ t: i*0.1, fn: () => {
+          spawnRingFx(p.x, p.z, 5 + i*2, 'water');
+          spawnRingFx(p.x, p.z, 3 + i*2, 'water');
+        }});
       }
-    }
+      for (let i=0; i<60; i++){
+        const a = Math.random()*TAU, s = rand(3, 12);
+        spawnP(p.x, rand(0.5, 2), p.z, Math.sin(a)*s, rand(0.5, 5), Math.cos(a)*s,
+          0.55, 0.9, 1, rand(0.3, 0.7), rand(0.5, 1.1), -2);
+      }
+      shake = 20; hitStop = 0.1; flashAlpha = 0.24;
+      sfx(300, 0.7, 'sine', 0.1, 900); sfxNoise(0.6, 0.1, 1200);
+    }}
   },
 
-  /* ---------- FLAME: 1-5 + 9th ult ---------- */
   flame: {
     key:'flame', name:'FLAME', kanji:'炎',
-    color:'#ffd98a', glow:'#ff6a1a',
     forms: [
-      {name:'Unknowing Fire',            cost:14, cd:0.40, run:D({dmg:38, dist:210, width:62, iframes:0.16, knock:1.5})},
-      {name:'Rising Scorching Sun',      cost:16, cd:0.40, run:A({dmg:34, range:118, arc:0.85*PI, knock:2.3, heavy:true})},
-      {name:'Blazing Universe',          cost:22, cd:0.55, run:A({dmg:40, range:138, arc:1.55*PI, knock:1.5})},
-      {name:'Blooming Flame Undulation', cost:26, cd:0.70, run:R({dmg:38, radius:118, knock:1.6})},
-      {name:'Flame Tiger',               cost:30, cd:0.90, run:PR({dmg:52, speed:620, r:34, life:1.2})}
+      { name:'Unknowing Fire',            cost:14, cd:0.40, run: Dh({ dmg:38, dist:8,  width:2.6, iframes:0.16, knock:1.5 }) },
+      { name:'Rising Scorching Sun',      cost:16, cd:0.40, run: A({ dmg:34, range:4.5, arc:0.85*PI, knock:2.3, heavy:true }) },
+      { name:'Blazing Universe',          cost:22, cd:0.55, run: A({ dmg:40, range:5,   arc:1.55*PI, knock:1.5 }) },
+      { name:'Blooming Flame Undulation', cost:26, cd:0.70, run: R({ dmg:38, radius:4.5, knock:1.6 }) },
+      { name:'Flame Tiger',               cost:30, cd:0.90, run: Pr({ dmg:52, speed:22, r:1.2, life:1.2 }) }
     ],
-    ult: {
-      name:'Rengoku', num:'9th Form',
-      run(p){
-        const dir = p.aim;
-        for(let i=0;i<5;i++){
-          schedule(i*0.07, ()=>{
-            for(const d of demonsInArc(p.x,p.y,dir,330,1.25*PI)) damageDemon(d,34,dir,2.5);
-            emitStyle('flame', p.x+Math.cos(dir)*150, p.y+Math.sin(dir)*150, dir, 1, 18);
-          });
-        }
-        rings.push({x:p.x,y:p.y,r:20,maxR:340,life:0.8,max:0.8,color:'#ff8a2a'});
-        for(let i=0;i<60;i++){
-          const t = i/60;
-          const px = p.x+Math.cos(dir)*330*t+rand(-40,40);
-          const py = p.y+Math.sin(dir)*330*t+rand(-40,40);
-          addParticle({kind:'glow', spr:Math.random()<0.4?SPR.fireHot:SPR.fire, x:px, y:py, vx:rand(-60,60), vy:rand(-60,60)-40, life:rand(0.4,0.9), max:0.9, size:rand(16,44), additive:true});
-        }
-        p.vx += Math.cos(dir)*380; p.vy += Math.sin(dir)*380;
-        p.invuln = Math.max(p.invuln, 0.55);
-        shake = 24; hitStop = 0.12; flashAlpha = 0.3;
-        sfx(110,0.9,'sawtooth',0.13,40); sfxNoise(0.7,0.15,700);
+    ult: { name:'Rengoku', num:'9th Form', run: p => {
+      const dir = p.aim;
+      for (let i=0; i<5; i++){
+        scheduled.push({ t: i*0.07, fn: () => {
+          for (const d of demonsInArc(p.x, p.z, dir, 12, 1.25*PI)) damageDemon(d, 34, dir, 2.5);
+          for (let k=0; k<20; k++){
+            const t = k/20, a = dir - 0.6 + 1.2*t, r = rand(3, 11);
+            emitStyle('flame', p.x+Math.sin(a)*r, 1, p.z+Math.cos(a)*r, dir, 1, 1);
+          }
+        }});
       }
-    }
-  },
-
-  /* ---------- THUNDER: 1-6 + 7th ult ---------- */
-  thunder: {
-    key:'thunder', name:'THUNDER', kanji:'雷',
-    color:'#fff2a0', glow:'#ffd400',
-    forms: [
-      {name:'Thunderclap and Flash', cost:12, cd:0.42, run:D({dmg:40, dist:300, width:32, iframes:0.20, knock:1.4})},
-      {name:'Rice Spirit',           cost:18, cd:0.45, run:A({dmg:17, range:108, arc:1.05*PI, hits:3, spread:0.6, knock:1})},
-      {name:'Thunder Swarm',         cost:26, cd:0.70, run:R({dmg:32, radius:158, knock:1.5})},
-      {name:'Distant Thunder',       cost:22, cd:0.55, run:PR({dmg:44, speed:900, r:20, life:0.85})},
-      {name:'Heat Lightning',        cost:26, cd:0.70, run:D({dmg:56, dist:240, width:40, iframes:0.24, knock:1.8})},
-      {name:'Rumble and Flash',      cost:34, cd:1.00, run:M({dmg:16, ticks:5, interval:0.09, radius:122, knock:1.2})}
-    ],
-    ult: {
-      name:'Flaming Thunder God', num:'7th Form',
-      run(p){
-        const dir = p.aim;
-        const ux = Math.cos(dir), uy = Math.sin(dir);
-        const x1 = p.x, y1 = p.y, x2 = x1+ux*620, y2 = y1+uy*620;
-        for(const d of demons){
-          if(d.dead) continue;
-          const t = clamp(((d.x-x1)*ux + (d.y-y1)*uy)/620, 0, 1);
-          const cx = x1+ux*620*t, cy = y1+uy*620*t;
-          if(Math.hypot(d.x-cx, d.y-cy) < 70 + d.r) damageDemon(d,160,dir,3);
-        }
-        for(let i=0;i<14;i++){
-          const t = i/14;
-          makeBolt(lerp(x1,x2,t), lerp(y1,y2,t), lerp(x1,x2,t+0.08), lerp(y1,y2,t+0.08), '255,250,180', 26, 0.28);
-          emitStyle('thunder', lerp(x1,x2,t), lerp(y1,y2,t), dir, 1, 8);
-        }
-        p.x = clamp(x2, 40, W-40);
-        p.y = clamp(y2, 40, H-40);
-        p.invuln = Math.max(p.invuln, 0.6);
-        shake = 26; hitStop = 0.12; flashAlpha = 0.35;
-        sfxNoise(0.4,0.18,3600); sfx(900,0.35,'square',0.07,120);
-      }
-    }
-  },
-
-  /* ---------- WIND: 1-8 + 9th ult ---------- */
-  wind: {
-    key:'wind', name:'WIND', kanji:'風',
-    color:'#d6ffe4', glow:'#4dffb0',
-    forms: [
-      {name:'Dust Whirlwind Cutter',    cost:12, cd:0.20, run:A({dmg:24, range:112, arc:1.35*PI, knock:1.2, lunge:160})},
-      {name:'Claws of the Storm',       cost:18, cd:0.45, run:A({dmg:19, range:122, arc:0.95*PI, hits:3, spread:0.45, knock:1.2})},
-      {name:'Clean Storm Wind Tree',    cost:24, cd:0.65, run:R({dmg:34, radius:122, knock:1.5})},
-      {name:'Rising Dust Storm',        cost:24, cd:0.70, run:A({dmg:38, range:152, arc:0.72*PI, knock:2.2, heavy:true})},
-      {name:'Cold Mountain Wind',       cost:20, cd:0.55, run:PR({dmg:40, speed:720, r:24, life:1.0})},
-      {name:'Black Wind Mountain Mist', cost:28, cd:0.80, run:R({dmg:44, radius:142, knock:1.8, pull:true})},
-      {name:'Gale, Sudden Gusts',       cost:30, cd:0.90, run:R({dmg:36, radius:182, knock:2.0, pull:true})},
-      {name:'Primary Gale Slash',       cost:34, cd:1.00, run:A({dmg:56, range:162, arc:1.2*PI, knock:2.4, heavy:true})}
-    ],
-    ult: {
-      name:'Idaten Typhoon', num:'9th Form',
-      run(p){
-        p.invuln = Math.max(p.invuln, 0.8);
-        for(let i=0;i<5;i++){
-          schedule(i*0.09, ()=>{
-            for(const d of demonsInRadius(p.x,p.y,320))
-              damageDemon(d, 26, Math.atan2(d.y-p.y,d.x-p.x), 3.2);
-            rings.push({x:p.x,y:p.y,r:30,maxR:320,life:0.5,max:0.5,color:'#9dffcf'});
-            for(let k=0;k<16;k++){
-              const a = Math.random()*TAU;
-              emitStyle('wind', p.x+Math.cos(a)*rand(60,300), p.y+Math.sin(a)*rand(60,300), a+PI/2, 1, 3);
-            }
-          });
-        }
-        for(let i=0;i<60;i++){
-          const a = Math.random()*TAU, s = rand(200,700);
-          addParticle({kind:'glow', spr:SPR.wind, x:p.x, y:p.y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:rand(0.35,0.8), max:0.8, size:rand(14,40), additive:true});
-        }
-        shake = 22; hitStop = 0.1; flashAlpha = 0.26;
-        sfxNoise(0.7,0.16,1300); sfx(600,0.5,'sine',0.07,1800);
-      }
-    }
-  }
-};
-
-/* ================= INIT / RESET ================= */
-function reset(){
-  player = {
-    x:W/2, y:H/2, vx:0, vy:0, r:14,
-    hp:100, maxHp:100,
-    stamina:100, maxStamina:100, stamDelay:0,
-    breathing:0,
-    aim:0, atkCd:0,
-    dashT:0, dashCd:0, dashDir:0,
-    invuln:0, hurtFlash:0,
-    style:'water', formIdx:0,
-    ultLock:0, stepPhase:0,
-    chain:0, chainT:0
-  };
-  demons = []; particles = []; slashes = []; texts = [];
-  telegraphs = []; projectiles = []; rings = []; bolts = [];
-  scheduled = [];
-  wave = 0; waveState = 'idle'; waveTimer = 1.5;
-  score = 0; kills = 0;
-  gameTime = 0; shake = 0; hitStop = 0;
-  flashAlpha = 0; deathTimer = 0;
-}
-reset();
-
-for(let i=0;i<70;i++){
-  ambient.push({
-    x:rand(0,2000), y:rand(0,2000),
-    vx:rand(-8,8), vy:rand(-16,-3),
-    s:rand(1,2.6), a:rand(0.05,0.24), ph:rand(0,TAU)
-  });
-}
-
-/* ================= SPAWNING ================= */
-function findSpawnPos(){
-  let best = {x:rand(70,W-70), y:rand(70,H-70)};
-  for(let i=0;i<40;i++){
-    const x = rand(70,W-70), y = rand(70,H-70);
-    if(Math.hypot(x-player.x, y-player.y) > 290) return {x,y};
-    best = {x,y};
-  }
-  return best;
-}
-function pickType(w){
-  const r = Math.random();
-  if(w>=4 && r<0.22) return 'brute';
-  if(w>=2 && r<0.58) return 'swift';
-  return 'grunt';
-}
-function startWave(){
-  wave++;
-  const isBoss = wave % 5 === 0;
-  const count = Math.min(3 + Math.floor(wave*1.05), 13);
-  for(let i=0;i<count;i++){
-    const p = findSpawnPos();
-    const type = pickType(wave);
-    const delay = 0.55 + i*0.13;
-    telegraphs.push({x:p.x, y:p.y, t:delay, max:delay, type, r:TYPES[type].r});
-  }
-  if(isBoss){
-    const p = findSpawnPos();
-    telegraphs.push({x:p.x, y:p.y, t:1.7, max:1.7, type:'boss', r:TYPES.boss.r});
-    sfx(90,0.9,'sawtooth',0.09,45);
-  }
-  waveState = 'active';
-  sfx(330,0.22,'triangle',0.05,520);
-}
-function makeDemon(type,x,y){
-  const t = TYPES[type];
-  const hpScale = 1 + (wave-1)*0.14;
-  const spScale = 1 + Math.min(wave-1,12)*0.025;
-  return {
-    type, x, y, vx:0, vy:0, r:t.r,
-    hp:t.hp*hpScale, maxHp:t.hp*hpScale,
-    speed:t.speed*spScale, dmg:t.dmg,
-    color:t.color, score:t.score,
-    seed:rand(0,100),
-    hitFlash:0, stun:0, atkCd:0,
-    chargeCd:2.5, windup:0, charging:0,
-    cdx:0, cdy:0, dead:false
-  };
-}
-
-/* ================= FORM SELECT ================= */
-function selectForm(i){
-  const st = STYLES[player.style];
-  const n = st.forms.length;
-  const ni = ((i % n) + n) % n;
-  if(ni !== player.formIdx){
-    player.formIdx = ni;
-    sfx(620 + ni*46, 0.05, 'sine', 0.02);
-  }
-}
-
-function useForm(p){
-  const st = STYLES[p.style];
-  const f = st.forms[p.formIdx];
-  if(!f) return;
-  if(p.atkCd > 0 || p.ultLock > 0 || p.dashT > 0) return;
-  if(p.stamina < f.cost){ sfx(180,0.06,'square',0.02); return; }
-
-  p.stamina -= f.cost;
-  p.stamDelay = 0.30;
-  p.atkCd = f.cd;
-  f.run(p);
-}
-
-function useUlt(p){
-  if(p.breathing < 100 || p.ultLock > 0) return;
-  p.breathing = 0;
-  p.ultLock = 0.35;
-  STYLES[p.style].ult.run(p);
-}
-
-/* ================= PLAYER ================= */
-function hurtPlayer(dmg,nx,ny){
-  const p = player;
-  if(p.invuln > 0) return;
-  p.hp -= dmg;
-  p.invuln = 0.85;
-  p.hurtFlash = 1;
-  p.vx += nx*420; p.vy += ny*420;
-  p.chain = 0; p.chainT = 0;
-  shake = Math.max(shake, 16);
-  hitStop = 0.07;
-  flashAlpha = 0.4;
-  for(let i=0;i<14;i++){
-    const a = Math.random()*TAU, s = rand(80,300);
-    addParticle({kind:'glow', spr:SPR.blood, x:p.x, y:p.y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:rand(0.2,0.5), max:0.5, size:rand(10,24), additive:true});
-  }
-  sfx(140,0.25,'square',0.1,60);
-  if(p.hp <= 0){ p.hp = 0; die(); }
-}
-
-function die(){
-  state = 'dead';
-  deathTimer = 0;
-  bestScore = Math.max(bestScore, score);
-  shake = 26;
-  for(let i=0;i<60;i++){
-    const a = Math.random()*TAU, s = rand(100,460);
-    addParticle({kind:'glow', spr:Math.random()<0.5?SPR.blood:SPR.white, x:player.x, y:player.y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:rand(0.4,1.1), max:1.1, size:rand(10,30), additive:true});
-  }
-  sfx(200,1.2,'sawtooth',0.12,40);
-}
-
-function updatePlayer(dt){
-  const p = player;
-  p.aim = Math.atan2(input.my - p.y, input.mx - p.x);
-
-  p.atkCd = Math.max(0, p.atkCd - dt);
-  p.dashCd = Math.max(0, p.dashCd - dt);
-  p.invuln = Math.max(0, p.invuln - dt);
-  p.hurtFlash = Math.max(0, p.hurtFlash - dt*3);
-  p.ultLock = Math.max(0, p.ultLock - dt);
-  p.chainT = Math.max(0, p.chainT - dt);
-  if(p.chainT <= 0) p.chain = 0;
-
-  p.stamDelay = Math.max(0, p.stamDelay - dt);
-  if(p.stamDelay <= 0) p.stamina = Math.min(p.maxStamina, p.stamina + 34*dt);
-  p.breathing = Math.min(100, p.breathing + 1.6*dt);
-
-  let ix = 0, iy = 0;
-  if(input.keys['a'] || input.keys['ArrowLeft']) ix -= 1;
-  if(input.keys['d'] || input.keys['ArrowRight']) ix += 1;
-  if(input.keys['w'] || input.keys['ArrowUp']) iy -= 1;
-  if(input.keys['s'] || input.keys['ArrowDown']) iy += 1;
-  const il = Math.hypot(ix,iy);
-  if(il > 0){ ix/=il; iy/=il; }
-
-  if(p.dashT > 0){
-    p.dashT -= dt;
-    p.vx = Math.cos(p.dashDir)*900;
-    p.vy = Math.sin(p.dashDir)*900;
-    emitStyle(p.style, p.x, p.y, p.dashDir+PI, 0.35, 1);
-  } else {
-    const accel = 3400;
-    p.vx += ix*accel*dt;
-    p.vy += iy*accel*dt;
-    const damp = Math.exp(-9.5*dt);
-    p.vx *= damp; p.vy *= damp;
-  }
-
-  p.x += p.vx*dt;
-  p.y += p.vy*dt;
-  if(p.x < 30){ p.x = 30; p.vx = Math.abs(p.vx)*0.3; }
-  if(p.x > W-30){ p.x = W-30; p.vx = -Math.abs(p.vx)*0.3; }
-  if(p.y < 30){ p.y = 30; p.vy = Math.abs(p.vy)*0.3; }
-  if(p.y > H-30){ p.y = H-30; p.vy = -Math.abs(p.vy)*0.3; }
-  p.stepPhase += Math.hypot(p.vx,p.vy)*dt*0.035;
-
-  if(Math.random() < 0.35){
-    const a = Math.random()*TAU;
-    emitStyle(p.style, p.x+Math.cos(a)*rand(8,22), p.y+Math.sin(a)*rand(8,22), a, 0.12, 1);
-  }
-
-  // form selection
-  const nKeys = ['1','2','3','4','5','6','7','8','9','0'];
-  for(let i=0;i<nKeys.length;i++){
-    if(pressed.has(nKeys[i])) selectForm(i);
-  }
-  if(pressed.has('[')) selectForm(p.formIdx-1);
-  if(pressed.has(']')) selectForm(p.formIdx+1);
-
-  // style switch
-  if(pressed.has('q')){
-    const idx = STYLE_ORDER.indexOf(p.style);
-    p.style = STYLE_ORDER[(idx+1) % STYLE_ORDER.length];
-    p.formIdx = 0;
-    emitStyle(p.style, p.x, p.y, 0, 0.9, 22);
-    rings.push({x:p.x,y:p.y,r:10,maxR:70,life:0.4,max:0.4,color:STYLES[p.style].glow});
-    sfx(420,0.22,'triangle',0.06,780);
-  }
-
-  // ult
-  if(pressed.has('e')) useUlt(p);
-
-  // dash
-  if(pressed.has(' ') || pressed.has('Shift') || pressed.has('mouse2')){
-    if(p.dashCd <= 0 && p.dashT <= 0){
-      let dx = ix, dy = iy;
-      if(dx===0 && dy===0){ dx = Math.cos(p.aim); dy = Math.sin(p.aim); }
-      p.dashDir = Math.atan2(dy,dx);
-      p.dashT = 0.15;
-      p.dashCd = 0.42;
-      p.invuln = Math.max(p.invuln, 0.24);
-      emitStyle(p.style, p.x, p.y, p.dashDir+PI, 0.6, 10);
-      sfx(660,0.14,'sine',0.05,220);
-    }
-  }
-
-  // attack
-  if(input.down || input.keys['j']) useForm(p);
-}
-
-/* ================= DEMONS ================= */
-function updateDemons(dt){
-  const p = player;
-  for(const d of demons){
-    if(d.dead) continue;
-    d.hitFlash = Math.max(0, d.hitFlash - dt*5);
-    d.stun = Math.max(0, d.stun - dt);
-    d.atkCd = Math.max(0, d.atkCd - dt);
-
-    const dx = p.x-d.x, dy = p.y-d.y;
-    const dist = Math.hypot(dx,dy) || 1;
-    const nx = dx/dist, ny = dy/dist;
-
-    if(d.type === 'boss'){
-      if(d.charging > 0){
-        d.charging -= dt;
-        d.vx = d.cdx*800;
-        d.vy = d.cdy*800;
-        if(Math.random() < 0.8){
-          addParticle({kind:'glow', spr:SPR.blood, x:d.x+rand(-d.r,d.r), y:d.y+rand(-d.r,d.r), vx:rand(-30,30), vy:rand(-30,30), life:0.4, max:0.4, size:rand(10,22), additive:true});
-        }
-      } else if(d.windup > 0){
-        d.windup -= dt;
-        d.vx *= Math.exp(-12*dt);
-        d.vy *= Math.exp(-12*dt);
-        if(d.windup <= 0){ d.charging = 0.45; sfx(160,0.3,'sawtooth',0.09,420); }
-      } else {
-        d.chargeCd -= dt;
-        const accel = d.speed*8;
-        d.vx += nx*accel*dt;
-        d.vy += ny*accel*dt;
-        if(d.chargeCd <= 0 && dist < 640){
-          d.chargeCd = 4.2; d.windup = 0.75;
-          d.cdx = nx; d.cdy = ny;
-        }
-      }
-    } else if(d.stun <= 0){
-      const accel = d.speed*8;
-      d.vx += nx*accel*dt;
-      d.vy += ny*accel*dt;
-    }
-
-    const damp = Math.exp(-6*dt);
-    d.vx *= damp; d.vy *= damp;
-
-    const sp = Math.hypot(d.vx,d.vy);
-    const maxSp = d.type==='boss' ? 820 : d.speed*1.7;
-    if(sp > maxSp){ d.vx = d.vx/sp*maxSp; d.vy = d.vy/sp*maxSp; }
-
-    d.x = clamp(d.x + d.vx*dt, d.r, W-d.r);
-    d.y = clamp(d.y + d.vy*dt, d.r, H-d.r);
-
-    if(dist < d.r + p.r + 3 && d.atkCd <= 0 && p.invuln <= 0){
-      hurtPlayer(d.dmg, nx, ny);
-      d.atkCd = 0.95;
-      d.vx -= nx*260; d.vy -= ny*260;
-    }
-  }
-
-  // separation
-  for(let i=0;i<demons.length;i++){
-    const a = demons[i];
-    if(a.dead) continue;
-    for(let j=i+1;j<demons.length;j++){
-      const b = demons[j];
-      if(b.dead) continue;
-      const dx = b.x-a.x, dy = b.y-a.y;
-      const dd = Math.hypot(dx,dy) || 0.001;
-      const minD = a.r + b.r;
-      if(dd < minD){
-        const push = (minD-dd)*0.5;
-        const ux = dx/dd, uy = dy/dd;
-        const wa = b.r/(a.r+b.r), wb = a.r/(a.r+b.r);
-        a.x -= ux*push*wa; a.y -= uy*push*wa;
-        b.x += ux*push*wb; b.y += uy*push*wb;
-      }
-    }
-  }
-
-  for(let i=demons.length-1;i>=0;i--) if(demons[i].dead) demons.splice(i,1);
-}
-
-/* ================= PROJECTILES / TELEGRAPHS ================= */
-function updateProjectiles(dt){
-  for(let i=projectiles.length-1;i>=0;i--){
-    const pr = projectiles[i];
-    pr.x += pr.vx*dt;
-    pr.y += pr.vy*dt;
-    pr.life -= dt;
-
-    for(let k=0;k<2;k++){
-      const a = Math.atan2(pr.vy,pr.vx) + PI + rand(-0.7,0.7);
-      emitStyle(pr.style, pr.x+rand(-12,12), pr.y+rand(-12,12), a, 0.4, 1);
-    }
-
-    for(const d of demons){
-      if(d.dead || pr.hit.has(d)) continue;
-      if(Math.hypot(d.x-pr.x, d.y-pr.y) < pr.r + d.r){
-        pr.hit.add(d);
-        damageDemon(d, pr.dmg, Math.atan2(pr.vy,pr.vx), 1.4);
-      }
-    }
-
-    if(pr.life <= 0 || pr.x < -80 || pr.x > W+80 || pr.y < -80 || pr.y > H+80){
-      projectiles.splice(i,1);
-    }
-  }
-}
-
-function updateTelegraphs(dt){
-  for(let i=telegraphs.length-1;i>=0;i--){
-    const t = telegraphs[i];
-    t.t -= dt;
-    if(t.t <= 0){
-      demons.push(makeDemon(t.type, t.x, t.y));
-      if(t.type === 'boss'){
-        rings.push({x:t.x,y:t.y,r:10,maxR:220,life:0.6,max:0.6,color:'#ff3b5c'});
-      }
-      telegraphs.splice(i,1);
-    }
-  }
-}
-
-/* ================= PARTICLES / TIMERS ================= */
-function updateParticles(dt){
-  for(let i=particles.length-1;i>=0;i--){
-    const pa = particles[i];
-    if(pa.kind === 'bubble'){
-      pa.vy -= 60*dt;
-      pa.x += Math.sin(gameTime*5 + pa.seed)*16*dt;
-    } else if(pa.kind === 'glow' && pa.additive){
-      pa.vy -= 40*dt;
-    }
-    pa.x += pa.vx*dt;
-    pa.y += pa.vy*dt;
-    const damp = Math.exp(-3.2*dt);
-    pa.vx *= damp; pa.vy *= damp;
-    pa.life -= dt;
-    if(pa.life <= 0) particles.splice(i,1);
-  }
-  for(let i=texts.length-1;i>=0;i--){
-    const t = texts[i];
-    t.y -= 46*dt; t.life -= dt;
-    if(t.life <= 0) texts.splice(i,1);
-  }
-  for(let i=slashes.length-1;i>=0;i--){
-    slashes[i].life -= dt;
-    if(slashes[i].life <= 0) slashes.splice(i,1);
-  }
-  for(let i=rings.length-1;i>=0;i--){
-    const r = rings[i];
-    r.life -= dt;
-    r.r = lerp(r.r, r.maxR, 1 - Math.pow(0.001, dt));
-    if(r.life <= 0) rings.splice(i,1);
-  }
-  for(let i=bolts.length-1;i>=0;i--){
-    bolts[i].life -= dt;
-    if(bolts[i].life <= 0) bolts.splice(i,1);
-  }
-  for(let i=scheduled.length-1;i>=0;i--){
-    const s = scheduled[i];
-    s.t -= dt;
-    if(s.t <= 0){ s.fn(); scheduled.splice(i,1); }
-  }
-}
-
-function updateAmbient(dt){
-  for(const m of ambient){
-    m.x += m.vx*dt; m.y += m.vy*dt; m.ph += dt*2;
-    if(m.y < -20){ m.y = H+20; m.x = rand(0,W); }
-    if(m.x < -20) m.x = W+20;
-    if(m.x > W+20) m.x = -20;
-  }
-}
-
-/* ================= UPDATE ================= */
-function update(dt, rawDt){
-  gameTime += rawDt;
-  updateAmbient(dt);
-  if(shake > 0) shake = Math.max(0, shake - rawDt*46);
-  flashAlpha = Math.max(0, flashAlpha - rawDt*2.4);
-
-  if(state === 'title'){
-    updateParticles(dt);
-    if(pressed.has('mouse0') || pressed.has(' ') || pressed.has('Enter')){
-      initAudio();
-      reset();
-      state = 'playing';
-      input.down = false;
-      sfx(440,0.3,'triangle',0.08,880);
-    }
-    pressed.clear();
-    return;
-  }
-
-  if(state === 'dead'){
-    deathTimer += rawDt;
-    updateParticles(dt);
-    updateProjectiles(dt);
-    if(deathTimer > 0.8 && (pressed.has('r') || pressed.has('mouse0') || pressed.has(' '))){
-      reset();
-      state = 'playing';
-      input.down = false;
-    }
-    pressed.clear();
-    return;
-  }
-
-  updatePlayer(dt);
-  updateDemons(dt);
-  updateProjectiles(dt);
-  updateTelegraphs(dt);
-  updateParticles(dt);
-
-  if(waveState === 'idle'){
-    waveTimer -= dt;
-    if(waveTimer <= 0) startWave();
-  } else {
-    if(demons.length === 0 && telegraphs.length === 0){
-      waveState = 'idle';
-      waveTimer = 2.4;
-      player.hp = Math.min(player.maxHp, player.hp + 14);
-      player.stamina = player.maxStamina;
-      addText(player.x, player.y-40, 'WAVE CLEARED', '#9fe6ff', 18);
-      sfx(660,0.35,'sine',0.06,990);
-    }
-  }
-
-  pressed.clear();
-}
-
-/* ================= RENDER ================= */
-function drawBackground(){
-  const g = ctx.createRadialGradient(W/2,H/2,0, W/2,H/2, Math.max(W,H)*0.78);
-  g.addColorStop(0,'#151026');
-  g.addColorStop(0.55,'#0c0a15');
-  g.addColorStop(1,'#05040a');
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,W,H);
-
-  ctx.strokeStyle = 'rgba(120,90,200,0.055)';
-  ctx.lineWidth = 1;
-  const gs = 84;
-  ctx.beginPath();
-  for(let x=0;x<W;x+=gs){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
-  for(let y=0;y<H;y+=gs){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
-  ctx.stroke();
-
-  for(const m of ambient){
-    ctx.globalAlpha = m.a * (0.6 + 0.4*Math.sin(m.ph));
-    ctx.fillStyle = '#b9a8ff';
-    ctx.beginPath();
-    ctx.arc(m.x, m.y, m.s, 0, TAU);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  const v = ctx.createRadialGradient(W/2,H/2, Math.min(W,H)*0.35, W/2,H/2, Math.max(W,H)*0.8);
-  v.addColorStop(0,'rgba(0,0,0,0)');
-  v.addColorStop(1,'rgba(0,0,0,0.75)');
-  ctx.fillStyle = v;
-  ctx.fillRect(0,0,W,H);
-}
-
-function drawTelegraphs(){
-  for(const t of telegraphs){
-    const p = 1 - t.t/t.max;
-    const rad = t.r * (1.1 + p*0.9);
-    ctx.save();
-    ctx.translate(t.x,t.y);
-    ctx.globalAlpha = 0.35 + 0.35*Math.sin(gameTime*22 + t.x);
-    ctx.strokeStyle = t.type==='boss' ? '#ff1a3c' : '#ff4d6a';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0,0,rad,0,TAU); ctx.stroke();
-    ctx.globalAlpha = 0.1;
-    ctx.fillStyle = t.type==='boss' ? '#ff1a3c' : '#ff4d6a';
-    ctx.beginPath(); ctx.arc(0,0,rad,0,TAU); ctx.fill();
-    ctx.restore();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawRings(){
-  for(const r of rings){
-    const a = r.life/r.max;
-    ctx.globalAlpha = a*0.65;
-    ctx.strokeStyle = r.color;
-    ctx.lineWidth = 3 + 7*a;
-    ctx.beginPath();
-    ctx.arc(r.x, r.y, r.r, 0, TAU);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawBolts(){
-  for(const b of bolts){
-    const a = b.life/b.max;
-    ctx.globalAlpha = a;
-    ctx.strokeStyle = 'rgba('+b.rgb+',0.35)';
-    ctx.lineWidth = 9;
-    ctx.beginPath();
-    ctx.moveTo(b.x1,b.y1);
-    for(const s of b.segs) ctx.lineTo(s[0], s[1]);
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba('+b.rgb+',1)';
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.moveTo(b.x1,b.y1);
-    for(const s of b.segs) ctx.lineTo(s[0], s[1]);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawDemons(){
-  for(const d of demons){
-    const t = gameTime;
-    ctx.save();
-    ctx.translate(d.x, d.y);
-
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.beginPath();
-    ctx.ellipse(0, d.r*0.62, d.r*0.9, d.r*0.38, 0, 0, TAU);
-    ctx.fill();
-
-    const wob = 1 + Math.sin(t*5 + d.seed)*0.05;
-    const n = 10;
-    ctx.beginPath();
-    for(let i=0;i<=n;i++){
-      const a = (i/n)*TAU;
-      const rr2 = d.r*wob*(0.86 + 0.16*Math.sin(a*3 + t*4 + d.seed));
-      const px = Math.cos(a)*rr2, py = Math.sin(a)*rr2;
-      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
-    }
-    ctx.closePath();
-
-    const grad = ctx.createRadialGradient(0,-d.r*0.2,0, 0,0,d.r*1.25);
-    grad.addColorStop(0, d.color);
-    grad.addColorStop(1, '#170820');
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(255,90,140,0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    if(d.hitFlash > 0){
-      ctx.globalAlpha = d.hitFlash*0.85;
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
-    const ang = Math.atan2(player.y-d.y, player.x-d.x);
-    const ex = Math.cos(ang)*d.r*0.42, ey = Math.sin(ang)*d.r*0.42;
-    const px2 = Math.cos(ang+PI/2)*d.r*0.3, py2 = Math.sin(ang+PI/2)*d.r*0.3;
-    const er = Math.max(1.6, d.r*0.13);
-
-    ctx.fillStyle = d.type==='boss' ? '#fff2a8' : '#ff3b3b';
-    ctx.beginPath(); ctx.arc(ex+px2, ey+py2, er, 0, TAU); ctx.fill();
-    ctx.beginPath(); ctx.arc(ex-px2, ey-py2, er, 0, TAU); ctx.fill();
-
-    if(d.type === 'boss' && d.windup > 0){
-      ctx.globalAlpha = 0.5 + 0.4*Math.sin(gameTime*40);
-      ctx.strokeStyle = '#ff1a3c';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0,0,d.r+10,0,TAU);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-    if(d.type === 'brute' || d.type === 'boss'){
-      const bw = d.r*2;
-      const pct = clamp(d.hp/d.maxHp, 0, 1);
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(-bw/2, -d.r-14, bw, 5);
-      ctx.fillStyle = d.type==='boss' ? '#ff2a4a' : '#ff7a3a';
-      ctx.fillRect(-bw/2, -d.r-14, bw*pct, 5);
-    }
-
-    ctx.restore();
-  }
-}
-
-function drawPlayer(){
-  const p = player;
-  const st = STYLES[p.style];
-  const t = gameTime;
-
-  ctx.save();
-  ctx.translate(p.x, p.y);
-
-  ctx.fillStyle = 'rgba(0,0,0,0.45)';
-  ctx.beginPath();
-  ctx.ellipse(0, p.r*0.75, p.r*1.05, p.r*0.45, 0, 0, TAU);
-  ctx.fill();
-
-  if(p.invuln > 0 && Math.floor(t*24)%2 === 0) ctx.globalAlpha = 0.45;
-
-  if(p.breathing >= 100){
-    const pulse = 0.35 + 0.25*Math.sin(t*8);
-    ctx.globalAlpha = pulse;
-    const ag = ctx.createRadialGradient(0,0,p.r, 0,0,p.r*3.4);
-    ag.addColorStop(0, st.glow);
-    ag.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = ag;
-    ctx.beginPath(); ctx.arc(0,0,p.r*3.4,0,TAU); ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-
-  // katana
-  ctx.save();
-  ctx.rotate(p.aim);
-  const bladeLen = 42;
-  ctx.globalAlpha = 0.45;
-  ctx.strokeStyle = st.glow;
-  ctx.lineWidth = 9;
-  ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(12+bladeLen,0); ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  ctx.strokeStyle = st.color;
-  ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(12+bladeLen,0); ctx.stroke();
-
-  ctx.fillStyle = '#c8b06a';
-  ctx.fillRect(10,-5,4,10);
-  ctx.strokeStyle = '#2a1a10';
-  ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(10,0); ctx.stroke();
-  ctx.restore();
-
-  const bob = Math.sin(p.stepPhase*2)*1.4;
-  const bodyGrad = ctx.createRadialGradient(-4,-4-bob,2, 0,-bob,p.r*1.5);
-  bodyGrad.addColorStop(0, p.hurtFlash>0 ? '#ffffff' : '#2f6f7f');
-  bodyGrad.addColorStop(1, p.hurtFlash>0 ? '#ff8a8a' : '#101a26');
-  ctx.fillStyle = bodyGrad;
-  ctx.beginPath(); ctx.arc(0,-bob,p.r,0,TAU); ctx.fill();
-
-  ctx.strokeStyle = st.glow;
-  ctx.lineWidth = 2;
-  ctx.globalAlpha = 0.8;
-  ctx.beginPath(); ctx.arc(0,-bob,p.r,0,TAU); ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  ctx.strokeStyle = 'rgba(200,240,255,0.35)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(0,-bob,p.r*0.55,0.4,2.4); ctx.stroke();
-
-  ctx.restore();
-}
-
-function drawSlashes(){
-  for(const s of slashes){
-    const p = 1 - s.life/s.max;
-    const alpha = Math.pow(1-p, 0.85);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-
-    if(s.thrust || s.streak){
-      ctx.translate(s.x, s.y);
-      ctx.rotate(s.dir);
-      const L = s.range;
-      const wid = s.thrust ? 16 : 26;
-      const grd = ctx.createLinearGradient(0,0,L,0);
-      grd.addColorStop(0, 'rgba(255,255,255,0)');
-      grd.addColorStop(0.45, s.color);
-      grd.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = grd;
-      ctx.beginPath();
-      ctx.moveTo(0, -wid*0.25);
-      ctx.quadraticCurveTo(L*0.5, -wid*0.6, L, 0);
-      ctx.quadraticCurveTo(L*0.5, wid*0.6, 0, wid*0.25);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(L,0); ctx.stroke();
-    } else {
-      const half = s.arc/2;
-      const startA = s.dir - half;
-      const sweep = Math.min(1, p*1.7);
-      const head = startA + s.arc*sweep;
-      const tail = startA + s.arc*Math.max(0, sweep-0.8);
-      const rad = s.range*0.86;
-
-      ctx.strokeStyle = s.color;
-      ctx.lineWidth = (s.heavy?20:14)*(1-p*0.35);
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, rad, tail, head);
-      ctx.stroke();
-
-      ctx.globalAlpha = alpha*0.95;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, rad, tail, head);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawProjectiles(){
-  for(const pr of projectiles){
-    const a = clamp(pr.life/pr.maxLife, 0, 1);
-    ctx.save();
-    ctx.translate(pr.x, pr.y);
-    ctx.rotate(Math.atan2(pr.vy, pr.vx));
-    ctx.globalAlpha = a;
-
-    const spr = pr.style==='flame' ? SPR.fire : (pr.style==='water' ? SPR.water : (pr.style==='thunder' ? SPR.thunder : SPR.wind));
-    const sz = pr.r*3;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.drawImage(spr, -sz/2, -sz/2, sz, sz);
-    ctx.globalCompositeOperation = 'source-over';
-
-    if(pr.style === 'flame'){
-      ctx.strokeStyle = 'rgba(255,240,190,0.85)';
-      ctx.lineWidth = 3;
-      for(let i=-1;i<=1;i++){
-        ctx.beginPath();
-        ctx.moveTo(-pr.r*1.2, i*9);
-        ctx.lineTo(pr.r*0.9, i*4);
-        ctx.stroke();
-      }
-    } else if(pr.style === 'thunder'){
-      ctx.strokeStyle = '#fffbe0';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-pr.r,0); ctx.lineTo(-pr.r*0.2, -6); ctx.lineTo(pr.r*0.4, 5); ctx.lineTo(pr.r,0);
-      ctx.stroke();
-    } else {
-      ctx.strokeStyle = pr.style==='water' ? 'rgba(200,240,255,0.9)' : 'rgba(220,255,235,0.9)';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0,0,pr.r*0.6,0,TAU); ctx.stroke();
-    }
-    ctx.restore();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawParticles(){
-  for(const pa of particles){
-    const a = clamp(pa.life/pa.max, 0, 1);
-
-    if(pa.kind === 'glow'){
-      const s = pa.size * (0.6 + a*0.8);
-      ctx.globalAlpha = a;
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.drawImage(pa.spr, pa.x-s/2, pa.y-s/2, s, s);
-      ctx.globalCompositeOperation = 'source-over';
-    } else if(pa.kind === 'bubble'){
-      ctx.globalAlpha = a*0.9;
-      ctx.strokeStyle = pa.color;
-      ctx.lineWidth = Math.max(1, pa.size*0.22);
-      ctx.beginPath(); ctx.arc(pa.x, pa.y, pa.size, 0, TAU); ctx.stroke();
-      ctx.globalAlpha = a*0.55;
-      ctx.fillStyle = 'rgba(160,225,255,0.18)';
-      ctx.fill();
-      ctx.globalAlpha = a*0.95;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(pa.x - pa.size*0.3, pa.y - pa.size*0.35, pa.size*0.22, 0, TAU);
-      ctx.fill();
-    } else {
-      ctx.globalAlpha = a;
-      ctx.strokeStyle = pa.color;
-      ctx.lineWidth = pa.size;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(pa.x, pa.y);
-      ctx.lineTo(pa.x - pa.vx*0.02, pa.y - pa.vy*0.02);
-      ctx.stroke();
-    }
-  }
-  ctx.globalAlpha = 1;
-
-  for(const t of texts){
-    const a = clamp(t.life/t.max, 0, 1);
-    ctx.globalAlpha = a;
-    ctx.font = 'bold ' + t.size + 'px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillText(t.txt, t.x+1, t.y+1);
-    ctx.fillStyle = t.color;
-    ctx.fillText(t.txt, t.x, t.y);
-  }
-  ctx.globalAlpha = 1;
-  ctx.textAlign = 'left';
-}
-
-/* ================= HUD ================= */
-function bar(x,y,w,h,pct,c1,c2){
-  ctx.fillStyle = '#160a12';
-  rr(x,y,w,h,h/2); ctx.fill();
-  const g = ctx.createLinearGradient(x,0,x+w,0);
-  g.addColorStop(0,c1); g.addColorStop(1,c2);
-  ctx.fillStyle = g;
-  rr(x,y,Math.max(0,w*pct),h,h/2); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-  ctx.lineWidth = 1;
-  rr(x,y,w,h,h/2); ctx.stroke();
-}
-
-function drawHUD(){
-  const p = player;
-  const st = STYLES[p.style];
-
-  const bx = 26, by = 26;
-  const bw = Math.min(300, W*0.33), bh = 14;
-
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  rr(bx-6, by-6, bw+12, bh*3+52, 10); ctx.fill();
-
-  // HP
-  bar(bx, by, bw, bh, clamp(p.hp/p.maxHp,0,1), '#ff2b52', '#ff9a4d');
-  ctx.font = 'bold 10px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  ctx.fillText('HP ' + Math.ceil(p.hp), bx+6, by+bh-3.5);
-
-  // Stamina
-  const sy = by + bh + 8;
-  bar(bx, sy, bw, bh*0.72, clamp(p.stamina/p.maxStamina,0,1), '#3a6bff', '#7fe6ff');
-  ctx.fillStyle = 'rgba(255,255,255,0.65)';
-  ctx.fillText('STAMINA', bx+6, sy+bh*0.72-3);
-
-  // Breathing
-  const ry = sy + bh*0.72 + 8;
-  bar(bx, ry, bw, bh*0.72, clamp(p.breathing/100,0,1),
-      p.style==='water'?'#1e6bff' : p.style==='flame'?'#ff4d1a' : p.style==='thunder'?'#c8a000' : '#12b06a',
-      st.color);
-
-  if(p.breathing >= 100){
-    ctx.globalAlpha = 0.45 + 0.4*Math.sin(gameTime*9);
-    ctx.strokeStyle = st.glow;
-    ctx.lineWidth = 2;
-    rr(bx-2, ry-2, bw+4, bh*0.72+4, 5); ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-  ctx.fillStyle = p.breathing>=100 ? st.color : 'rgba(255,255,255,0.55)';
-  ctx.fillText(p.breathing>=100 ? '[E] ' + st.ult.num + ' — ' + st.ult.name.toUpperCase() : 'BREATHING ' + Math.floor(p.breathing) + '%',
-               bx+6, ry+bh*0.72-3);
-
-  // style name
-  ctx.font = 'bold 15px Georgia, serif';
-  ctx.fillStyle = st.color;
-  ctx.fillText(st.kanji + '  ' + st.name + ' BREATHING', bx, by + bh*3 + 34);
-  ctx.font = '10px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.fillText('[Q] next style', bx, by + bh*3 + 48);
-
-  // ---- form list ----
-  const nForms = st.forms.length;
-  const lh = Math.min(19, Math.max(13, (H*0.5) / nForms));
-  const fx = bx, fy = by + bh*3 + 66;
-
-  ctx.font = 'bold 10px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.fillText('FORMS  [1-0] / [/]  ·  wheel', fx, fy - 8);
-
-  for(let i=0;i<nForms;i++){
-    const f = st.forms[i];
-    const y = fy + i*lh;
-    const sel = i === p.formIdx;
-    const affordable = p.stamina >= f.cost;
-
-    if(sel){
-      ctx.fillStyle = 'rgba(255,255,255,0.10)';
-      rr(fx-5, y-2, Math.min(260, W*0.3), lh, 4); ctx.fill();
-      ctx.fillStyle = st.glow;
-      rr(fx-5, y-2, 3, lh, 1.5); ctx.fill();
-    }
-
-    ctx.font = (sel?'bold ':'') + '11px Georgia, serif';
-    ctx.fillStyle = sel ? st.color : (affordable ? 'rgba(220,230,245,0.62)' : 'rgba(160,120,140,0.42)');
-    const num = (i+1) % 10;
-    ctx.fillText(num + '. ' + f.name, fx, y + lh*0.72);
-
-    ctx.textAlign = 'right';
-    ctx.font = '9px Georgia, serif';
-    ctx.fillStyle = affordable ? 'rgba(150,220,255,0.6)' : 'rgba(255,120,140,0.6)';
-    ctx.fillText(f.cost, fx + Math.min(255, W*0.3) - 6, y + lh*0.72);
-    ctx.textAlign = 'left';
-  }
-
-  // ---- wave / score ----
-  ctx.textAlign = 'right';
-  ctx.font = 'bold 30px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillText('WAVE ' + Math.max(wave,1), W-26, 52);
-
-  ctx.font = 'bold 15px Georgia, serif';
-  ctx.fillStyle = '#ffd98a';
-  ctx.fillText(score.toLocaleString(), W-26, 76);
-
-  ctx.font = '11px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.fillText('KILLS ' + kills, W-26, 94);
-
-  if(waveState === 'idle' && waveTimer > 0 && wave > 0){
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillStyle = 'rgba(160,230,255,0.8)';
-    ctx.fillText('NEXT WAVE IN ' + Math.ceil(waveTimer), W/2, 52);
-  }
-
-  if(p.chainT > 0 && p.chain > 1){
-    const a = clamp(p.chainT/1.1, 0, 1);
-    ctx.textAlign = 'center';
-    ctx.globalAlpha = a;
-    ctx.font = 'bold 26px Georgia, serif';
-    ctx.fillStyle = p.chain >= 15 ? '#ffb03a' : '#ffffff';
-    ctx.fillText(p.chain + ' HIT', W/2, H-54);
-    ctx.globalAlpha = 1;
-  }
-
-  // controls reminder
-  ctx.textAlign = 'right';
-  ctx.font = '10px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.28)';
-  ctx.fillText('WASD move · mouse aim · LMB/J attack · SPACE dash · E ultimate · Q style', W-26, H-20);
-
-  ctx.textAlign = 'left';
-}
-
-/* ================= TITLE / DEATH ================= */
-function drawTitle(){
-  ctx.fillStyle = 'rgba(4,3,10,0.74)';
-  ctx.fillRect(0,0,W,H);
-  ctx.textAlign = 'center';
-
-  const cy = H*0.26;
-
-  ctx.save();
-  ctx.shadowColor = '#3fa9ff';
-  ctx.shadowBlur = 26;
-  ctx.font = 'bold ' + Math.min(60, W*0.072) + 'px Georgia, serif';
-  ctx.fillStyle = '#eaf7ff';
-  ctx.fillText('BREATH OF THE BLADE', W/2, cy);
-  ctx.restore();
-
-  ctx.font = 'italic ' + Math.min(18, W*0.023) + 'px Georgia, serif';
-  ctx.fillStyle = 'rgba(160,220,255,0.85)';
-  ctx.fillText('— Water · Flame · Thunder · Wind —', W/2, cy+34);
-
-  const px = W/2;
-  let y = cy + 82;
-
-  ctx.font = 'bold 13px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillText('CONTROLS', px, y);
-  y += 24;
-
-  ctx.font = '13px Georgia, serif';
-  ctx.fillStyle = 'rgba(200,215,235,0.78)';
-  const lines = [
-    'WASD / Arrows — Move      ·      Mouse — Aim',
-    'Left Click / J — Current Form      ·      Wheel or 1-0 — Pick Form',
-    'Space / Shift / Right Click — Dash (i-frames)',
-    'Q — Switch Breathing Style      ·      E — Ultimate (full breathing bar)'
-  ];
-  lines.forEach(l => { ctx.fillText(l, px, y); y += 22; });
-
-  y += 8;
-  ctx.font = 'bold 12px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,220,150,0.8)';
-  ctx.fillText('11 FORMS OF WATER  ·  5 FORMS OF FLAME  ·  6 FORMS OF THUNDER  ·  8 FORMS OF WIND', px, y);
-  y += 34;
-
-  const pulse = 0.5 + 0.5*Math.sin(gameTime*3.2);
-  ctx.globalAlpha = 0.55 + 0.45*pulse;
-  ctx.font = 'bold 20px Georgia, serif';
-  ctx.fillStyle = '#ffd98a';
-  ctx.fillText('CLICK  TO  BEGIN', px, y);
-  ctx.globalAlpha = 1;
-
-  ctx.textAlign = 'left';
-}
-
-function drawDead(){
-  const a = clamp(deathTimer/0.6, 0, 1);
-  ctx.fillStyle = 'rgba(30,2,8,' + (0.74*a) + ')';
-  ctx.fillRect(0,0,W,H);
-
-  ctx.textAlign = 'center';
-  ctx.globalAlpha = a;
-
-  ctx.save();
-  ctx.shadowColor = '#ff2b52';
-  ctx.shadowBlur = 24;
-  ctx.font = 'bold ' + Math.min(56, W*0.068) + 'px Georgia, serif';
-  ctx.fillStyle = '#ffdfe6';
-  ctx.fillText('YOU HAVE FALLEN', W/2, H*0.4);
-  ctx.restore();
-
-  ctx.font = 'bold 22px Georgia, serif';
-  ctx.fillStyle = '#ffd98a';
-  ctx.fillText('SCORE  ' + score.toLocaleString(), W/2, H*0.4+56);
-
-  ctx.font = '15px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillText('Wave reached: ' + wave + '     Demons slain: ' + kills, W/2, H*0.4+86);
-  ctx.fillText('Best score: ' + bestScore.toLocaleString(), W/2, H*0.4+110);
-
-  if(deathTimer > 0.8){
-    const pulse = 0.5 + 0.5*Math.sin(gameTime*3.4);
-    ctx.globalAlpha = a*(0.5 + 0.5*pulse);
-    ctx.font = 'bold 18px Georgia, serif';
-    ctx.fillStyle = '#9fe6ff';
-    ctx.fillText('PRESS  R  OR  CLICK  TO  RISE  AGAIN', W/2, H*0.4+168);
-  }
-
-  ctx.globalAlpha = 1;
-  ctx.textAlign = 'left';
-}
-
-/* ================= RENDER ================= */
-function render(){
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  ctx.clearRect(0,0,W,H);
-
-  drawBackground();
-
-  ctx.save();
-  if(shake > 0.2) ctx.translate(rand(-shake,shake), rand(-shake,shake));
-
-  drawTelegraphs();
-  drawRings();
-  drawDemons();
-  drawProjectiles();
-  if(state !== 'dead' || deathTimer < 0.15) drawPlayer();
-  drawSlashes();
-  drawBolts();
-  drawParticles();
-
-  ctx.restore();
-
-  if(flashAlpha > 0){
-    ctx.fillStyle = 'rgba(255,70,90,' + (flashAlpha*0.45) + ')';
-    ctx.fillRect(0,0,W,H);
-  }
-
-  if(state === 'playing') drawHUD();
-  if(state === 'title') drawTitle();
-  if(state === 'dead') drawDead();
-}
-
-/* ================= MAIN LOOP ================= */
-let last = performance.now();
-function loop(ts){
-  requestAnimationFrame(loop);
-
-  let rawDt = (ts - last) / 1000;
-  last = ts;
-  if(!isFinite(rawDt) || rawDt < 0) rawDt = 0;
-  rawDt = Math.min(rawDt, 0.05);
-
-  let dt = rawDt;
-  if(hitStop > 0){ hitStop -= rawDt; dt *= 0.12; }
-
-  update(dt, rawDt);
-  render();
-}
-requestAnimationFrame(loop);
-
-})();
-</script>
-</body>
-</html>
+      spawnRingFx(p.x, p.z, 12, 'flame');
+      p.vx += Math.sin(dir)*8; p.vz += Math.cos(dir)*8;
+      p.invuln = Math.max(p.invul
