@@ -37,4 +37,690 @@
                     <div style="margin-top:5px;">BREATHING <span id="ultText" style="color:cyan;display:none;">[E] READY!</span></div>
                     <div class="bar-container"><div id="breathBar" class="bar-fill"></div></div>
                 </div>
-                <div class="hud-
+                <div class="hud-box">
+                    <div id="styleName" style="font-size:20px; font-weight:bold; margin-bottom:5px;">STYLE</div>
+                    <div id="formList"></div>
+                    <div class="controls-help">WASD:Move | Mouse:Aim | Click/J:Attack<br>Space/Shift:Dash | Q/Z:Swap Style | 1-9:Form</div>
+                </div>
+            </div>
+            <div class="hud-box" style="text-align: right; width: 150px;">
+                <div style="font-size:24px;">Wave <span id="waveText">1</span></div>
+                <div>Score: <span id="scoreText">0</span></div>
+                <div>Kills: <span id="killText">0</span></div>
+            </div>
+        </div>
+    </div>
+    <div id="comboDisplay">0 HITS!</div>
+    <div id="centerMessage"></div>
+    
+    <div id="overlay">
+        <h1 style="font-size: 48px; color: darkred; text-shadow: 0 0 10px red; margin-bottom:10px;">DEMON SLAYER:<br>SURVIVAL ARENA</h1>
+        <p style="max-width: 600px; color: #ddd; margin-bottom: 30px;">
+            Survive endless waves. Grunts, Swifts, Brutes, and Bosses (Every 5 waves).<br>
+            Use Q/Z to swap through all 14 Breathing Styles.<br>
+            Mouse wheel or 1-9 to select forms.
+        </p>
+        <button id="startBtn">CLICK TO BEGIN</button>
+    </div>
+
+<script>
+// --- GAME DATA: BREATHING STYLES & ARCHETYPES ---
+// Archetypes (t): 0=Slash, 1=Thrust, 2=Spin(360), 3=Aerial(Jump+AoE), 4=Projectile, 5=Multi-hit, 6=Defensive(I-frames+Ring), 7=Buff, 8=ZigZag, 9=13thFormChain
+const ARCH_COSTS = [15, 20, 25, 30, 25, 40, 35, 50, 25, 100];
+const STYLES = [
+    { n:"Water", c:0x4169E1, w:"katana", f:[{n:"1: Surface Slash",t:0},{n:"2: Water Wheel",t:3},{n:"3: Flowing Dance",t:8},{n:"4: Striking Tide",t:5},{n:"5: Blessed Rain",t:1},{n:"6: Whirlpool",t:2},{n:"7: Piercing Rain Drop",t:1},{n:"8: Waterfall Basin",t:3},{n:"9: Splashing Water Flow",t:8},{n:"10: Constant Flux",t:5},{n:"11: Dead Calm",t:6}] },
+    { n:"Flame", c:0xFF4500, w:"katana", f:[{n:"1: Unknowing Fire",t:0},{n:"2: Rising Scorching Sun",t:3},{n:"3: Blazing Universe",t:0},{n:"4: Blooming Flame Undulation",t:6},{n:"5: Flame Tiger",t:5},{n:"9: Rengoku",t:1}] },
+    { n:"Thunder", c:0xFFD700, w:"katana", f:[{n:"1: Thunderclap & Flash",t:1},{n:"2: Rice Spirit",t:5},{n:"3: Thunder Swarm",t:2},{n:"4: Distant Thunder",t:4},{n:"5: Heat Lightning",t:3},{n:"6: Rumble & Flash",t:5},{n:"7: Flaming Thunder God",t:1}] },
+    { n:"Wind", c:0x98FB98, w:"katana", f:[{n:"1: Dust Whirlwind Cutter",t:1},{n:"2: Claws-Purifying Wind",t:0},{n:"3: Clean Storm Wind Tree",t:6},{n:"4: Rising Dust Storm",t:3},{n:"5: Cold Mountain Wind",t:2},{n:"6: Black Wind Mountain Mist",t:5},{n:"7: Gale, Sudden Gusts",t:4},{n:"8: Primary Gale Slash",t:0},{n:"9: Idaten Typhoon",t:3}] },
+    { n:"Stone", c:0x8B4513, w:"flail", f:[{n:"1: Serpentinite Bipolar",t:4},{n:"2: Upper Smash",t:3},{n:"3: Stone Skin",t:6},{n:"4: Volcanic Rock",t:2},{n:"5: Arcs of Justice",t:5}] },
+    { n:"Mist", c:0xE0FFFF, w:"katana", f:[{n:"1: Low Clouds",t:1},{n:"2: Eight-Layered Mist",t:5},{n:"3: Scattering Mist Splash",t:6},{n:"4: Shifting Flow Slash",t:0},{n:"5: Sea of Clouds & Haze",t:8},{n:"6: Lunar Dispersing Mist",t:3},{n:"7: Obscuring Clouds",t:7}] },
+    { n:"Love", c:0xFF69B4, w:"whip", f:[{n:"1: Shivers of First Love",t:0},{n:"2: Love Pangs",t:1},{n:"3: Catlove Shower",t:3},{n:"5: Swaying Love",t:8},{n:"6: Legged Winds of Love",t:2}] },
+    { n:"Insect", c:0x9370DB, w:"needle", f:[{n:"Butterfly Dance: Caprice",t:3},{n:"Dance of the Bee Sting",t:1},{n:"Dance of the Dragonfly",t:5},{n:"Dance of the Centipede",t:8}] },
+    { n:"Flower", c:0xFFB6C1, w:"katana", f:[{n:"2: Honorable Shadow Plum",t:6},{n:"4: Crimson Hanagoromo",t:0},{n:"5: Peonies of Futility",t:5},{n:"6: Whirling Peach",t:2},{n:"Final: Equinoctial Vermilion Eye",t:7}] },
+    { n:"Serpent", c:0x32CD32, w:"katana", f:[{n:"1: Winding Serpent Slash",t:0},{n:"2: Venom Fangs",t:1},{n:"3: Coil Choke",t:2},{n:"4: Twin-Headed Reptile",t:4},{n:"5: Slithering Serpent",t:8}] },
+    { n:"Sound", c:0xFFA500, w:"cleaver", f:[{n:"1: Roar",t:3},{n:"4: Constant Resounding Slashes",t:2},{n:"5: String Performance",t:5}] },
+    { n:"Beast", c:0xA9A9A9, w:"dual", f:[{n:"1: Pierce",t:1},{n:"2: Rip and Tear",t:0},{n:"3: Devour",t:0},{n:"4: Slice 'n' Dice",t:5},{n:"5: Crazy Cutting",t:2},{n:"6: Palisade Bite",t:6},{n:"7: Spatial Awareness",t:7},{n:"8: Explosive Rush",t:1},{n:"9: Extending Bendy Slashes",t:4},{n:"10: Whirling Fangs",t:2}] },
+    { n:"Moon", c:0x8A2BE2, w:"katana", f:[{n:"1: Dark Moon",t:0},{n:"2: Pearl Flowers",t:2},{n:"3: Loathsome Moon",t:1},{n:"5: Moon Spirit Calamitous Eddy",t:6},{n:"6: Perpetual Night",t:5},{n:"7: Mirror of Misfortune",t:6},{n:"8: Moon-Dragon Ringtail",t:4},{n:"9: Waning Moonswaths",t:5},{n:"10: Drilling Slashes",t:1},{n:"14: Catastrophe",t:3},{n:"16: Moonlit Cage",t:2}] },
+    { n:"Sun", c:0xFF0000, w:"katana", f:[{n:"1: Dance",t:0},{n:"2: Clear Blue Sky",t:2},{n:"3: Raging Sun",t:0},{n:"4: Fake Rainbow",t:7},{n:"5: Fire Wheel",t:3},{n:"6: Burning Bones",t:2},{n:"7: Sunflower Thrust",t:1},{n:"8: Solar Heat Haze",t:8},{n:"9: Setting Sun Transformation",t:3},{n:"10: Beneficent Radiance",t:2},{n:"11: Dragon Sun Halo Head Dance",t:5},{n:"12: Flame Dance",t:5},{n:"13th Form",t:9}] }
+];
+
+// --- THREE.JS SETUP ---
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.03);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(scene.fog.color);
+document.body.appendChild(renderer.domElement);
+
+// Lighting
+const ambLight = new THREE.AmbientLight(0x222233);
+scene.add(ambLight);
+const dirLight = new THREE.DirectionalLight(0x555577, 1);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
+
+// Arena Environment
+const groundGeo = new THREE.PlaneGeometry(150, 150);
+const groundMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+// Add torches
+const torchGeo = new THREE.CylinderGeometry(0.2, 0.2, 2);
+const fireGeo = new THREE.SphereGeometry(0.5);
+for(let i=0; i<8; i++){
+    let angle = (i/8)*Math.PI*2;
+    let x = Math.cos(angle)*40;
+    let z = Math.sin(angle)*40;
+    let torch = new THREE.Mesh(torchGeo, new THREE.MeshBasicMaterial({color:0x332211}));
+    torch.position.set(x, 1, z);
+    scene.add(torch);
+    let light = new THREE.PointLight(0xffaa00, 1, 30);
+    light.position.set(x, 2.5, z);
+    scene.add(light);
+    let fire = new THREE.Mesh(fireGeo, new THREE.MeshBasicMaterial({color:0xff5500}));
+    fire.position.set(x, 2, z);
+    scene.add(fire);
+}
+
+// System Variables
+const clock = new THREE.Clock();
+let gameRunning = false;
+let hitStop = 0;
+let cameraShake = 0;
+let mousePos = new THREE.Vector3();
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+let particles = [];
+let projectiles = [];
+let damageZones = [];
+let enemies = [];
+let wave = 1, score = 0, kills = 0, combo = 0, comboTimer = 0;
+
+// UI Elements
+const hpBar=document.getElementById('hpBar'), hpText=document.getElementById('hpText');
+const stamBar=document.getElementById('stamBar'), breathBar=document.getElementById('breathBar');
+const styleName=document.getElementById('styleName'), formList=document.getElementById('formList');
+const comboDisplay=document.getElementById('comboDisplay'), centerMessage=document.getElementById('centerMessage');
+const ultText=document.getElementById('ultText');
+
+// --- CLASSES ---
+
+class Player {
+    constructor() {
+        this.mesh = new THREE.Group();
+        this.body = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1, 4, 8), new THREE.MeshLambertMaterial({color: 0x444444}));
+        this.body.position.y = 1;
+        this.mesh.add(this.body);
+        this.weaponGroup = new THREE.Group();
+        this.weaponGroup.position.set(0.6, 1, 0.4);
+        this.mesh.add(this.weaponGroup);
+        scene.add(this.mesh);
+
+        this.hp = 100;
+        this.maxHp = 100;
+        this.stamina = 100;
+        this.maxStamina = 100;
+        this.breathing = 0;
+        
+        this.styleIdx = 0;
+        this.formIdx = 0;
+        this.buildWeapon();
+        
+        this.speed = 10;
+        this.velocity = new THREE.Vector3();
+        this.targetPos = new THREE.Vector3();
+        
+        this.state = 'idle'; // idle, move, dash, attack, multi_attack, aerial
+        this.stateTimer = 0;
+        this.iFrames = 0;
+        this.attackData = null; // Stores archetype data during attack
+        this.buffTimer = 0;
+    }
+
+    buildWeapon() {
+        while(this.weaponGroup.children.length) this.weaponGroup.remove(this.weaponGroup.children[0]);
+        let wType = STYLES[this.styleIdx].w;
+        let c = STYLES[this.styleIdx].c;
+        let mat = new THREE.MeshBasicMaterial({color: c});
+        if(wType === "katana" || wType === "cleaver" || wType === "needle") {
+            let w = wType==="cleaver"?0.4 : wType==="needle"?0.05 : 0.1;
+            let l = wType==="cleaver"?1.5 : 2;
+            let blade = new THREE.Mesh(new THREE.BoxGeometry(w, l, w), mat);
+            blade.position.y = l/2;
+            blade.rotation.x = Math.PI/2;
+            this.weaponGroup.add(blade);
+        } else if(wType === "dual") {
+            for(let i=-1; i<=1; i+=2) {
+                let b = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.1), mat);
+                b.position.set(i*0.5, 0.9, 0);
+                b.rotation.x = Math.PI/2;
+                this.weaponGroup.add(b);
+            }
+        } else if(wType === "flail" || wType === "whip") {
+            let b = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2, 8), mat);
+            b.position.y = 1;
+            b.rotation.x = Math.PI/2;
+            this.weaponGroup.add(b);
+        }
+        updateUIStyle();
+    }
+
+    update(dt) {
+        if(this.hp <= 0) return;
+        
+        // Regens
+        if(this.state !== 'attack' && this.state !== 'multi_attack' && this.state !== 'aerial') {
+            this.stamina = Math.min(this.maxStamina, this.stamina + 20 * dt);
+        }
+        if(this.iFrames > 0) this.iFrames -= dt;
+        if(this.buffTimer > 0) this.buffTimer -= dt;
+
+        // Input vectors
+        let dir = new THREE.Vector3(0,0,0);
+        if(keys['w']||keys['ArrowUp']) dir.z -= 1;
+        if(keys['s']||keys['ArrowDown']) dir.z += 1;
+        if(keys['a']||keys['ArrowLeft']) dir.x -= 1;
+        if(keys['d']||keys['ArrowRight']) dir.x += 1;
+        if(dir.lengthSq() > 0) dir.normalize();
+
+        let moveSpeed = this.speed * (this.buffTimer>0 ? 1.5 : 1);
+
+        // State Machine
+        if(this.state === 'idle' || this.state === 'move') {
+            if(dir.lengthSq() > 0) {
+                this.mesh.position.addScaledVector(dir, moveSpeed * dt);
+                this.state = 'move';
+            } else {
+                this.state = 'idle';
+            }
+            // Rotate to face mouse
+            this.mesh.lookAt(mousePos.x, this.mesh.position.y, mousePos.z);
+            this.weaponGroup.rotation.z = 0; // reset weapon swing
+
+        } else if(this.state === 'dash') {
+            this.mesh.position.addScaledVector(this.velocity, moveSpeed * 2.5 * dt);
+            this.stateTimer -= dt;
+            spawnParticles(this.mesh.position, STYLES[this.styleIdx].c, 2, 0.2);
+            if(this.stateTimer <= 0) this.state = 'idle';
+
+        } else if(this.state === 'attack' || this.state === 'aerial') {
+            this.stateTimer -= dt;
+            this.weaponGroup.rotation.z += 15 * dt; // swing animation
+            
+            // Movement forcing based on archetype
+            if(this.attackData.t === 1) { // Thrust - move forward
+                let forward = new THREE.Vector3(0,0,1).applyQuaternion(this.mesh.quaternion);
+                this.mesh.position.addScaledVector(forward, 25 * dt);
+            } else if(this.attackData.t === 8) { // Zigzag
+                this.mesh.position.addScaledVector(this.velocity, 30 * dt);
+                if(Math.random()<0.2) this.velocity.applyAxisAngle(new THREE.Vector3(0,1,0), (Math.random()-0.5)*Math.PI);
+            } else if(this.attackData.t === 3) { // Aerial
+                if(this.stateTimer > 0.3) this.mesh.position.y += 15 * dt;
+                else if(this.stateTimer > 0) this.mesh.position.y -= 25 * dt;
+                else this.mesh.position.y = 0;
+            }
+
+            // Continuous damage zone for spins/defense
+            if(this.attackData.t === 2 || this.attackData.t === 6) {
+                damageZones.push({x: this.mesh.position.x, z: this.mesh.position.z, r: 6, dmg: 10, l: dt, source:'player'});
+                spawnParticles(this.mesh.position, STYLES[this.styleIdx].c, 3, 0.5, true); // Circular particles
+            }
+
+            if(this.stateTimer <= 0) {
+                this.mesh.position.y = 0;
+                this.state = 'idle';
+            }
+
+        } else if(this.state === 'multi_attack') {
+            this.stateTimer -= dt;
+            if(this.stateTimer <= 0 && this.attackData.hits > 0) {
+                // Fire a hit
+                this.attackData.hits--;
+                this.stateTimer = 0.15; // delay between hits
+                spawnHitbox(0, 15);
+                let forward = new THREE.Vector3(0,0,1).applyQuaternion(this.mesh.quaternion);
+                this.mesh.position.addScaledVector(forward, 2); // step forward
+                cameraShake = 0.1;
+                if(this.attackData.hits <= 0) this.state = 'idle';
+            }
+        } else if(this.state === 'chain_attack') {
+            this.stateTimer -= dt;
+            if(this.stateTimer <= 0 && this.attackData.hits > 0) {
+                this.attackData.hits--;
+                this.stateTimer = 0.25;
+                spawnHitbox(Math.floor(Math.random()*4), 30); // Random hitboxes for Sun 13th
+                spawnParticles(this.mesh.position, 0xFF0000, 10, 1.0, true);
+                if(this.attackData.hits <= 0) this.state = 'idle';
+            }
+        }
+
+        // Clamp to arena
+        this.mesh.position.x = Math.max(-70, Math.min(70, this.mesh.position.x));
+        this.mesh.position.z = Math.max(-70, Math.min(70, this.mesh.position.z));
+
+        // Camera follow
+        camera.position.x = this.mesh.position.x + (Math.random()-0.5)*cameraShake*10;
+        camera.position.z = this.mesh.position.z + 15 + (Math.random()-0.5)*cameraShake*10;
+        camera.position.y = 12 + (Math.random()-0.5)*cameraShake*10;
+        camera.lookAt(this.mesh.position);
+        if(cameraShake > 0) cameraShake -= dt;
+    }
+
+    useForm() {
+        if(this.state !== 'idle' && this.state !== 'move') return;
+        let form = STYLES[this.styleIdx].f[this.formIdx];
+        let cost = ARCH_COSTS[form.t] || 20;
+        if(this.stamina < cost) { showCenter("NOT ENOUGH STAMINA"); return; }
+        
+        this.stamina -= cost;
+        this.mesh.lookAt(mousePos.x, this.mesh.position.y, mousePos.z);
+        this.attackData = { t: form.t };
+        
+        let c = STYLES[this.styleIdx].c;
+
+        switch(form.t) {
+            case 0: // Slash
+                this.state = 'attack'; this.stateTimer = 0.3;
+                spawnHitbox(0, 20); break;
+            case 1: // Thrust
+                this.state = 'attack'; this.stateTimer = 0.4;
+                spawnHitbox(1, 25); break;
+            case 2: // Spin
+                this.state = 'attack'; this.stateTimer = 0.5;
+                spawnHitbox(2, 20); break;
+            case 3: // Aerial
+                this.state = 'aerial'; this.stateTimer = 0.6;
+                setTimeout(() => { if(this.hp>0) spawnHitbox(2, 35); cameraShake=0.4; }, 400); // impact delay
+                break;
+            case 4: // Projectile
+                this.state = 'attack'; this.stateTimer = 0.3;
+                let dir = new THREE.Vector3(0,0,1).applyQuaternion(this.mesh.quaternion);
+                projectiles.push({pos: this.mesh.position.clone(), dir: dir, speed: 30, c: c, life: 2});
+                break;
+            case 5: // Multi-hit
+                this.state = 'multi_attack'; this.attackData.hits = form.h || 5; this.stateTimer = 0;
+                break;
+            case 6: // Defensive
+                this.state = 'attack'; this.stateTimer = 0.8; this.iFrames = 0.8;
+                spawnHitbox(2, 10); spawnParticles(this.mesh.position, c, 20, 1.0, true);
+                break;
+            case 7: // Buff
+                this.state = 'attack'; this.stateTimer = 0.4; this.buffTimer = 10;
+                spawnParticles(this.mesh.position, c, 30, 2.0);
+                showCenter("SPATIAL / SENSES ENHANCED!");
+                break;
+            case 8: // Zigzag
+                this.state = 'attack'; this.stateTimer = 0.6;
+                this.velocity = new THREE.Vector3(0,0,1).applyQuaternion(this.mesh.quaternion);
+                spawnHitbox(2, 15);
+                break;
+            case 9: // Sun 13th Chain
+                this.state = 'chain_attack'; this.attackData.hits = 12; this.stateTimer = 0;
+                this.iFrames = 3.0;
+                showCenter("THIRTEENTH FORM", 0xFF0000);
+                break;
+        }
+        updateUI();
+    }
+
+    dash() {
+        if(this.state !== 'idle' && this.state !== 'move') return;
+        if(this.stamina < 15) return;
+        this.stamina -= 15;
+        this.state = 'dash';
+        this.stateTimer = 0.3;
+        this.iFrames = 0.3;
+        
+        let dir = new THREE.Vector3(0,0,0);
+        if(keys['w']||keys['ArrowUp']) dir.z -= 1;
+        if(keys['s']||keys['ArrowDown']) dir.z += 1;
+        if(keys['a']||keys['ArrowLeft']) dir.x -= 1;
+        if(keys['d']||keys['ArrowRight']) dir.x += 1;
+        
+        if(dir.lengthSq() === 0) dir.set(0,0,1).applyQuaternion(this.mesh.quaternion);
+        else dir.normalize();
+        
+        this.velocity.copy(dir);
+    }
+
+    takeDamage(dmg) {
+        if(this.iFrames > 0) return;
+        this.hp -= dmg;
+        cameraShake = 0.5;
+        combo = 0;
+        updateUI();
+        spawnParticles(this.mesh.position, 0xff0000, 15, 0.5);
+        if(this.hp <= 0) {
+            gameRunning = false;
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('overlay').innerHTML = `
+                <h1 style="color:red; font-size:64px;">DEAD</h1>
+                <p>Wave Reached: ${wave} | Kills: ${kills} | Score: ${score}</p>
+                <button id="retryBtn">RETRY</button>
+            `;
+            document.getElementById('retryBtn').addEventListener('click', initGame);
+        }
+    }
+}
+
+// Spawns a hitbox relative to player facing direction. t: 0=Slash, 1=Thrust, 2=AoE
+function spawnHitbox(t, dmg) {
+    let pos = player.mesh.position.clone();
+    let fwd = new THREE.Vector3(0,0,1).applyQuaternion(player.mesh.quaternion);
+    let r = 0, off = 0;
+    
+    if(t === 0) { r = 4; off = 3; } // Slash
+    if(t === 1) { r = 2; off = 8; } // Thrust (long)
+    if(t === 2) { r = 7; off = 0; } // AoE
+    
+    pos.addScaledVector(fwd, off);
+    damageZones.push({x: pos.x, z: pos.z, r: r, dmg: dmg, l: 0.1, source: 'player'});
+    spawnParticles(pos, STYLES[player.styleIdx].c, 10, 0.3);
+}
+
+class Enemy {
+    constructor(type) {
+        this.type = type; // 0: Grunt, 1: Swift, 2: Brute, 3: Boss
+        let s = type===2? 1.5 : type===3? 2.5 : type===1? 0.7 : 1;
+        this.mesh = new THREE.Mesh(new THREE.BoxGeometry(s,s*2,s), new THREE.MeshLambertMaterial({color: type===3?0x880000:0x550000}));
+        this.mesh.position.set((Math.random()-0.5)*100, s, (Math.random()-0.5)*100);
+        
+        // Don't spawn too close to player
+        if(this.mesh.position.distanceTo(player.mesh.position) < 20) {
+            this.mesh.position.x += 30;
+        }
+
+        scene.add(this.mesh);
+        
+        this.maxHp = type===0? 30 : type===1? 20 : type===2? 80 : 300 * wave;
+        this.hp = this.maxHp;
+        this.speed = type===1? 12 : type===2? 4 : type===3? 7 : 6;
+        this.dmg = type===0? 10 : type===1? 5 : type===2? 25 : 40;
+        
+        this.attackTimer = 0;
+        this.tellTimer = 0;
+    }
+
+    update(dt) {
+        if(this.hp <= 0) return;
+        let dist = this.mesh.position.distanceTo(player.mesh.position);
+        let range = this.type===3 ? 5 : 2.5;
+
+        if(this.tellTimer > 0) {
+            this.tellTimer -= dt;
+            this.mesh.material.emissive.setHex(0xff0000);
+            if(this.tellTimer <= 0) {
+                // Execute attack
+                this.mesh.material.emissive.setHex(0x000000);
+                if(dist < range + 2) player.takeDamage(this.dmg);
+                this.attackTimer = this.type===1? 1.0 : 2.0;
+            }
+            return;
+        }
+
+        if(dist > range) {
+            let dir = player.mesh.position.clone().sub(this.mesh.position).normalize();
+            this.mesh.position.addScaledVector(dir, this.speed * dt);
+            this.mesh.lookAt(player.mesh.position);
+        } else {
+            if(this.attackTimer <= 0) {
+                this.tellTimer = 0.5; // Windup
+            }
+        }
+        if(this.attackTimer > 0) this.attackTimer -= dt;
+    }
+
+    takeDamage(dmg) {
+        this.hp -= dmg;
+        hitStop = 0.05; // Hit stop effect
+        if(this.type===3) cameraShake = 0.3;
+        spawnParticles(this.mesh.position, 0xffaa00, 5, 0.2);
+        
+        // Add combo & breathing
+        combo++;
+        comboTimer = 3.0;
+        player.breathing = Math.min(100, player.breathing + 2);
+        score += 10;
+        
+        comboDisplay.innerText = combo + " HITS!";
+        comboDisplay.style.opacity = 1;
+        comboDisplay.style.transform = `scale(${1 + Math.min(combo*0.05, 1)})`;
+
+        if(this.hp <= 0) {
+            scene.remove(this.mesh);
+            kills++;
+            score += this.maxHp;
+            spawnParticles(this.mesh.position, 0x550000, 20, 1.0, true);
+        }
+    }
+}
+
+// --- SYSTEM LOGIC ---
+let player;
+let keys = {};
+
+function initGame() {
+    // Cleanup old entities
+    if(player) scene.remove(player.mesh);
+    enemies.forEach(e => scene.remove(e.mesh));
+    particles.forEach(p => scene.remove(p.mesh));
+    projectiles.forEach(p => scene.remove(p.mesh));
+    enemies = []; particles = []; projectiles = []; damageZones = [];
+    
+    player = new Player();
+    wave = 1; score = 0; kills = 0; combo = 0;
+    
+    document.getElementById('overlay').style.display = 'none';
+    gameRunning = true;
+    updateUIStyle();
+    spawnWave();
+    animate();
+}
+
+function spawnWave() {
+    showCenter("WAVE " + wave);
+    let count = 5 + wave * 2;
+    for(let i=0; i<count; i++) {
+        let type = 0;
+        let r = Math.random();
+        if(wave > 2 && r < 0.3) type = 1; // Swift
+        if(wave > 3 && r > 0.8) type = 2; // Brute
+        enemies.push(new Enemy(type));
+    }
+    if(wave % 5 === 0) {
+        showCenter("BOSS DEMON APPROACHES", 0xff0000);
+        enemies.push(new Enemy(3));
+    }
+    updateUI();
+}
+
+function spawnParticles(pos, color, count, lifeMult, circular=false) {
+    const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const mat = new THREE.MeshBasicMaterial({color: color});
+    for(let i=0; i<count; i++) {
+        let p = new THREE.Mesh(geo, mat);
+        p.position.copy(pos);
+        p.position.y += Math.random()*2;
+        let v = new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*10);
+        if(circular) {
+            let angle = Math.random()*Math.PI*2;
+            v.set(Math.cos(angle)*15, (Math.random()-0.5)*2, Math.sin(angle)*15);
+        }
+        particles.push({mesh: p, v: v, life: (0.2 + Math.random()*0.3)*lifeMult});
+        scene.add(p);
+    }
+}
+
+// --- INPUT HANDLERS ---
+window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    if(e.key === ' ' || e.key === 'Shift') player.dash();
+    if(e.key.toLowerCase() === 'j') player.useForm();
+    if(e.key.toLowerCase() === 'q') cycleStyle(-1);
+    if(e.key.toLowerCase() === 'z') cycleStyle(1);
+    if(e.key.toLowerCase() === 'e' && player.breathing >= 100) {
+        player.breathing = 0;
+        // Ultimate: Auto switch to Sun 13th if unlocked, else big AoE
+        player.styleIdx = 13; // Sun
+        player.formIdx = STYLES[13].f.length-1; // 13th form
+        player.buildWeapon();
+        updateUIStyle();
+        player.useForm();
+    }
+    if(e.key >= '1' && e.key <= '9') {
+        let idx = parseInt(e.key) - 1;
+        if(idx < STYLES[player.styleIdx].f.length) {
+            player.formIdx = idx;
+            updateUIStyle();
+        }
+    }
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('mousemove', e => {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+window.addEventListener('mousedown', e => {
+    if(e.button === 0 && gameRunning) player.useForm();
+    if(e.button === 2 && gameRunning) player.dash();
+});
+window.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('wheel', e => {
+    if(!gameRunning) return;
+    let dir = e.deltaY > 0 ? 1 : -1;
+    player.formIdx = (player.formIdx + dir + STYLES[player.styleIdx].f.length) % STYLES[player.styleIdx].f.length;
+    updateUIStyle();
+});
+
+function cycleStyle(dir) {
+    if(!gameRunning) return;
+    player.styleIdx = (player.styleIdx + dir + STYLES.length) % STYLES.length;
+    player.formIdx = 0;
+    player.buildWeapon();
+    updateUIStyle();
+    spawnParticles(player.mesh.position, STYLES[player.styleIdx].c, 20, 1.0);
+}
+
+// --- UI UPDATES ---
+function updateUI() {
+    hpText.innerText = Math.floor(player.hp);
+    hpBar.style.width = (player.hp/player.maxHp)*100 + "%";
+    stamBar.style.width = (player.stamina/player.maxStamina)*100 + "%";
+    breathBar.style.width = player.breathing + "%";
+    document.getElementById('waveText').innerText = wave;
+    document.getElementById('scoreText').innerText = score;
+    document.getElementById('killText').innerText = kills;
+    ultText.style.display = player.breathing >= 100 ? "inline" : "none";
+}
+function updateUIStyle() {
+    let s = STYLES[player.styleIdx];
+    styleName.innerText = s.n.toUpperCase() + " BREATHING";
+    styleName.style.color = "#" + s.c.toString(16).padStart(6, '0');
+    
+    let html = "";
+    s.f.forEach((f, i) => {
+        let cls = i === player.formIdx ? "active-form" : "";
+        html += `<div class="${cls}">${f.n} (Stam:${ARCH_COSTS[f.t]||20})</div>`;
+    });
+    formList.innerHTML = html;
+}
+function showCenter(msg, color=0xffffff) {
+    centerMessage.innerText = msg;
+    centerMessage.style.color = "#" + color.toString(16).padStart(6, '0');
+    centerMessage.style.opacity = 1;
+    setTimeout(() => { centerMessage.style.opacity = 0; }, 2000);
+}
+
+// --- MAIN LOOP ---
+function animate() {
+    if(!gameRunning) return;
+    requestAnimationFrame(animate);
+    let dt = clock.getDelta();
+    if(dt > 0.1) dt = 0.1;
+
+    // Raycast mouse to ground for aiming
+    raycaster.setFromCamera(mouse, camera);
+    let intersects = raycaster.intersectObject(ground);
+    if(intersects.length > 0) mousePos.copy(intersects[0].point);
+
+    if(hitStop > 0) {
+        hitStop -= dt;
+        renderer.render(scene, camera);
+        return;
+    }
+
+    player.update(dt);
+
+    // Enemies
+    for(let i=enemies.length-1; i>=0; i--) {
+        let e = enemies[i];
+        e.update(dt);
+        if(e.hp <= 0) enemies.splice(i, 1);
+    }
+
+    if(enemies.length === 0) { wave++; spawnWave(); }
+
+    // Projectiles
+    for(let i=projectiles.length-1; i>=0; i--) {
+        let p = projectiles[i];
+        if(!p.mesh) {
+            p.mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshBasicMaterial({color: p.c}));
+            scene.add(p.mesh);
+            p.mesh.position.copy(p.pos);
+        }
+        p.mesh.position.addScaledVector(p.dir, p.speed * dt);
+        p.life -= dt;
+        damageZones.push({x: p.mesh.position.x, z: p.mesh.position.z, r: 2, dmg: 15, l: dt, source: 'player'});
+        spawnParticles(p.mesh.position, p.c, 1, 0.2);
+        if(p.life <= 0) { scene.remove(p.mesh); projectiles.splice(i,1); }
+    }
+
+    // Damage Zones Collision (Player attacks hitting enemies)
+    damageZones.forEach(dz => {
+        if(dz.source === 'player') {
+            enemies.forEach(e => {
+                let dx = e.mesh.position.x - dz.x;
+                let dz2 = e.mesh.position.z - dz.z;
+                if(Math.sqrt(dx*dx + dz2*dz2) < dz.r + 1) { // 1 is enemy radius approx
+                    e.takeDamage(dz.dmg);
+                }
+            });
+        }
+        dz.l -= dt;
+    });
+    damageZones = damageZones.filter(dz => dz.l > 0);
+
+    // Particles
+    for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.mesh.position.addScaledVector(p.v, dt);
+        p.mesh.scale.multiplyScalar(0.9);
+        p.life -= dt;
+        if(p.life <= 0) { scene.remove(p.mesh); particles.splice(i,1); }
+    }
+
+    // Combo UI
+    if(comboTimer > 0) {
+        comboTimer -= dt;
+        if(comboTimer <= 0) { combo = 0; comboDisplay.style.opacity = 0; }
+    }
+
+    updateUI();
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Boot
+document.getElementById('startBtn').addEventListener('click', initGame);
+
+</script>
+</body>
+</html>
