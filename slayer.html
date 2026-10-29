@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Breath of the Blade 3D - All Styles</title>
+<title>Breath of the Blade 3D - Accurate Forms</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#050308;font-family:Georgia,serif;user-select:none}
 canvas{display:block}
@@ -56,13 +56,12 @@ canvas{display:block}
 </div>
 <div id="ov">
   <h1>BREATH OF THE BLADE</h1>
-  <h2>— 14 breathing styles · 80+ canon forms —</h2>
+  <h2>— 14 styles · canon movement logic —</h2>
   <div class="c">
     <b>WASD</b> move · <b>Mouse</b> aim · <b>LMB/J</b> attack<br>
     <b>Space/Shift</b> dash · <b>Q/Z</b> cycle style · <b>E</b> ultimate<br>
     <b>1-0</b> or wheel — pick form<br><br>
-    <span style="opacity:0.6">Water · Flame · Thunder · Wind · Stone · Mist · Love · Insect<br>
-    Flower · Serpent · Sound · Beast · Moon · Sun</span>
+    <span style="opacity:0.6">Thrusts · Aerial flips · 360° spins · Backflips · Chain throws · Buffs</span>
   </div>
   <div class="s">CLICK TO BEGIN</div>
 </div>
@@ -76,7 +75,7 @@ const cl=(v,a,b)=>v<a?a:v>b?b:v;
 const lp=(a,b,t)=>a+(b-a)*t;
 const ad=(a,b)=>{let d=(a-b)%TAU;if(d>PI)d-=TAU;if(d<-PI)d+=TAU;return d;};
 
-/* ---- SCENE ---- */
+/* ================= SCENE ================= */
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x05030a);
 scene.fog=new THREE.FogExp2(0x05030a,0.018);
@@ -89,7 +88,7 @@ ren.shadowMap.enabled=true;
 document.body.appendChild(ren.domElement);
 addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight);});
 
-/* ---- LIGHTS ---- */
+/* ================= LIGHTS ================= */
 scene.add(new THREE.AmbientLight(0x445577,0.8));
 const dl=new THREE.DirectionalLight(0x8899ff,1.3);
 dl.position.set(15,25,10);dl.castShadow=true;
@@ -98,7 +97,7 @@ Object.assign(dl.shadow.camera,{left:-22,right:22,top:22,bottom:-22});
 scene.add(dl);
 const pl=new THREE.PointLight(0x88ccff,3,12);scene.add(pl);
 
-/* ---- ARENA ---- */
+/* ================= ARENA ================= */
 const AR=22;
 const gnd=new THREE.Mesh(new THREE.CircleGeometry(AR,48),new THREE.MeshStandardMaterial({color:0x181028,roughness:0.9}));
 gnd.rotation.x=-PI/2;gnd.receiveShadow=true;scene.add(gnd);
@@ -115,8 +114,8 @@ for(let i=0;i<8;i++){
   const flL=new THREE.PointLight(0xff6633,1.0,8);flL.position.set(px,4,pz);scene.add(flL);
 }
 
-/* ---- PARTICLES ---- */
-const MP=1400;
+/* ================= PARTICLES ================= */
+const MP=1500;
 const pg=new THREE.BufferGeometry();
 pg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(MP*3),3));
 pg.setAttribute('color',new THREE.BufferAttribute(new Float32Array(MP*3),3));
@@ -159,7 +158,7 @@ function updP(dt){
   pg.attributes.alpha.needsUpdate=true;
 }
 
-/* ---- STYLE CONFIG ---- */
+/* ================= STYLE CONFIG ================= */
 const SC={
   water:  {r:0.5,g:0.85,b:1.0,hex:0x4488ff,css:'#7fe6ff',mode:'bubble',weapon:'sword'},
   flame:  {r:1.0,g:0.6,b:0.2,hex:0xff6622,css:'#ffaa44',mode:'ember',weapon:'sword'},
@@ -200,7 +199,7 @@ function emitStyle(st,x,y,z,dir,pw,n){
   }
 }
 
-/* ---- PLAYER MESH ---- */
+/* ================= PLAYER MESH ================= */
 const pObj=new THREE.Group();scene.add(pObj);
 const bodyM=new THREE.Mesh(new THREE.CapsuleGeometry(0.3,0.7,4,8),new THREE.MeshStandardMaterial({color:0x1a2535,roughness:0.5,metalness:0.3}));
 bodyM.position.y=0.85;bodyM.castShadow=true;pObj.add(bodyM);
@@ -209,14 +208,12 @@ headM.position.y=1.55;headM.castShadow=true;pObj.add(headM);
 const hairM=new THREE.Mesh(new THREE.ConeGeometry(0.28,0.4,8),new THREE.MeshStandardMaterial({color:0x0a0a18,roughness:0.9}));
 hairM.position.y=1.75;hairM.rotation.x=PI;hairM.castShadow=true;pObj.add(hairM);
 
-// primary sword
 const swP=new THREE.Group();swP.position.set(0.32,1,0);pObj.add(swP);
 const hndl=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.25,6),new THREE.MeshStandardMaterial({color:0x1a0a04}));
 hndl.rotation.z=PI/2;hndl.position.x=0.15;swP.add(hndl);
 const bladeM=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.04,0.06),new THREE.MeshStandardMaterial({color:0xeaf7ff,emissive:0x88ccff,emissiveIntensity:2,metalness:0.9,roughness:0.1}));
 bladeM.position.x=0.75;swP.add(bladeM);
 
-// secondary sword (for dual)
 const swP2=new THREE.Group();swP2.position.set(-0.32,1,0);swP2.visible=false;pObj.add(swP2);
 const hndl2=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.25,6),new THREE.MeshStandardMaterial({color:0x1a0a04}));
 hndl2.rotation.z=PI/2;hndl2.position.x=0.15;swP2.add(hndl2);
@@ -239,7 +236,7 @@ function updateWeapon(st){
   bladeM2.material.emissive.setHex(SC[st].hex);
 }
 
-/* ---- INPUT ---- */
+/* ================= INPUT ================= */
 const keys={},pressed=new Set();
 let mdown=false;
 const mouse={x:0,y:0};
@@ -256,7 +253,7 @@ addEventListener('mouseup',e=>{if(e.button===0)mdown=false;});
 addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('wheel',e=>{if(state==='playing')pickForm(player.formIdx+(e.deltaY>0?1:-1));},{passive:true});
 
-/* ---- AUDIO ---- */
+/* ================= AUDIO ================= */
 let actx=null;
 function initAudio(){
   if(!actx){try{actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
@@ -284,7 +281,7 @@ function sfxSt(st){
   else sfx(680,0.1,'sine',0.04,1500);
 }
 
-/* ---- STATE ---- */
+/* ================= STATE ================= */
 let state='title';
 let gameTime=0,shake=0;
 let wave=0,waveTimer=1.5,waveState='idle';
@@ -302,259 +299,259 @@ function resetGame(){
   demons=[];slashes=[];rings=[];projectiles=[];bolts=[];scheduled=[];
   player={x:0,z:0,vx:0,vz:0,hp:100,maxHp:100,stam:100,maxStam:100,stamDelay:0,
     breath:0,aim:0,atkCd:0,dashT:0,dashCd:0,dashDir:0,invuln:0,ultLock:0,
-    style:'water',formIdx:0,chain:0,chainT:0};
+    style:'water',formIdx:0,chain:0,chainT:0,buffT:0,buffSpd:0,buffCrit:0};
   wave=0;waveState='idle';waveTimer=1.5;
   score=0;kills=0;shake=0;gameTime=0;
   pObj.position.set(0,0,0);
   updateWeapon('water');
 }
 
-/* ---- HELPERS FOR FORM DATA ---- */
+/* ================= ARCHETYPE HELPERS ================= */
 const fA=(n,c,cd,dmg,r,arc,ex={})=>({name:n,cost:c,cd,t:'arc',dmg,range:r,arc,...ex});
 const fR=(n,c,cd,dmg,r,ex={})=>({name:n,cost:c,cd,t:'ring',dmg,radius:r,...ex});
 const fD=(n,c,cd,dmg,dist,w,ex={})=>({name:n,cost:c,cd,t:'dash',dmg,dist,w,...ex});
 const fL=(n,c,cd,dmg,len,w,ex={})=>({name:n,cost:c,cd,t:'line',dmg,len,w,...ex});
 const fM=(n,c,cd,dmg,r,ticks,interval,ex={})=>({name:n,cost:c,cd,t:'multi',dmg,radius:r,ticks,interval,...ex});
 const fP=(n,c,cd,dmg,sp,r,life,ex={})=>({name:n,cost:c,cd,t:'proj',dmg,speed:sp,r,life,...ex});
+const fSp=(n,c,cd,dmg,r,ex={})=>({name:n,cost:c,cd,t:'spin',dmg,radius:r,...ex});
+const fAir=(n,c,cd,dmg,dist,r,ex={})=>({name:n,cost:c,cd,t:'aerial',dmg,dist,radius:r,...ex});
+const fBk=(n,c,cd,dmg,r,ex={})=>({name:n,cost:c,cd,t:'backflip',dmg,radius:r,...ex});
+const fDef=(n,c,cd,dmg,r,ex={})=>({name:n,cost:c,cd,t:'def',dmg,radius:r,...ex});
+const fBuff=(n,c,cd,dur,ex={})=>({name:n,cost:c,cd,t:'buff',dur,...ex});
+const fCh=(n,c,cd,dmg,len,ex={})=>({name:n,cost:c,cd,t:'chain',dmg,len,...ex});
 
-/* ---- ULTS ---- */
-function ultBurst(R,D){
-  return p=>{
-    p.invuln=Math.max(p.invuln,0.6);
-    for(const d of inRadius(p.x,p.z,R))dmgDemon(d,D,Math.atan2(d.x-p.x,d.z-p.z),3);
-    spawnRing(p.x,p.z,R,p.style);
-    for(let i=0;i<40;i++){
-      const a=Math.random()*TAU,s=rnd(R*0.3,R*0.7);
-      emitStyle(p.style,p.x+Math.sin(a)*s,1,p.z+Math.cos(a)*s,a,1,2);
-    }
-    shake=20;sfxSt(p.style);
-  };
-}
+/* ================= ULT HELPERS ================= */
+function ultBurst(R,D){return p=>{
+  p.invuln=Math.max(p.invuln,0.6);
+  for(const d of inRadius(p.x,p.z,R))dmgDemon(d,D,Math.atan2(d.x-p.x,d.z-p.z),3);
+  spawnRing(p.x,p.z,R,p.style);
+  for(let i=0;i<40;i++){const a=Math.random()*TAU,s=rnd(R*0.3,R*0.7);emitStyle(p.style,p.x+Math.sin(a)*s,1,p.z+Math.cos(a)*s,a,1,2);}
+  shake=20;sfxSt(p.style);
+};}
 
-/* ---- FORMS DATA (all 14 styles) ---- */
+/* ================= FORMS (ACCURATE) ================= */
 const FORMS={
-  water:{name:'WATER',kanji:'水',list:[
-    fA('Water Surface Slash',10,0.20,22,4.5,1.35*PI,{knock:1.1}),
-    fR('Water Wheel',16,0.45,26,4),
-    fD('Flowing Dance',20,0.60,42,9,2.2,{iframes:0.22}),
-    fA('Striking Tide',22,0.55,14,5,1.15*PI,{hits:3,spread:0.55}),
-    fL('Blessed Rain After the Drought',26,0.80,60,7,1.5,{knock:2.2}),
-    fR('Whirlpool',28,0.85,34,5.5,{pull:true}),
-    fL('Drop Ripple Thrust',18,0.50,44,9,0.9),
-    fA('Waterfall Basin',30,0.90,48,6,0.95*PI,{knock:2.4}),
-    fD('Splashing Water Flow',22,0.70,30,11,2,{iframes:0.34}),
-    fM('Constant Flux',40,1.20,15,4.5,6,0.10)
-  ],ult:{name:'Dead Calm',num:'11th Form',run:p=>{
-    p.invuln=Math.max(p.invuln,0.7);
-    for(const d of inRadius(p.x,p.z,9))dmgDemon(d,100,Math.atan2(d.x-p.x,d.z-p.z),3);
-    for(let i=0;i<50;i++){const a=Math.random()*TAU,s=rnd(3,10);emit(p.x,rnd(0.5,2),p.z,Math.sin(a)*s,rnd(0.5,4),Math.cos(a)*s,0.5,0.9,1,rnd(0.3,0.7),rnd(0.5,1.1),-2);}
-    spawnRing(p.x,p.z,8,'water');shake=20;sfx(300,0.7,'sine',0.1,900);
-  }}},
+water:{name:'WATER',kanji:'水',list:[
+  fA('Water Surface Slash',10,0.20,22,4.5,1.35*PI,{knock:1.1}),
+  fAir('Water Wheel',16,0.45,28,5,3.2),
+  fA('Flowing Dance',20,0.60,16,4.8,1.1*PI,{hits:4,spread:0.5}),
+  fA('Striking Tide',22,0.55,12,5.0,1.0*PI,{hits:6,spread:0.4}),
+  fL('Blessed Rain After the Drought',26,0.80,60,8,0.9,{knock:2.2}),
+  fR('Whirlpool',28,0.85,34,5.5,{pull:true}),
+  fL('Drop Ripple Thrust',18,0.50,44,9,0.7,{knock:1.8}),
+  fA('Waterfall Basin',30,0.90,48,6,0.9*PI,{knock:2.4}),
+  fD('Splashing Water Flow',22,0.70,30,11,2.0,{iframes:0.34}),
+  fM('Constant Flux',40,1.20,15,4.5,6,0.10)
+],ult:{name:'Dead Calm',num:'11th',run:p=>{
+  p.invuln=Math.max(p.invuln,0.8);
+  for(const d of inRadius(p.x,p.z,9))dmgDemon(d,100,Math.atan2(d.x-p.x,d.z-p.z),3);
+  spawnRing(p.x,p.z,8,'water');shake=20;sfx(300,0.7,'sine',0.1,900);
+}}},
 
-  flame:{name:'FLAME',kanji:'炎',list:[
-    fD('Unknowing Fire',14,0.40,38,8,2.6,{iframes:0.16,knock:1.5}),
-    fA('Rising Scorching Sun',16,0.40,34,4.5,0.85*PI,{knock:2.3}),
-    fA('Blazing Universe',22,0.55,40,5,1.55*PI),
-    fR('Blooming Flame Undulation',26,0.70,38,4.5),
-    fP('Flame Tiger',30,0.90,52,22,1.2,1.2)
-  ],ult:{name:'Rengoku',num:'9th Form',run:p=>{
-    const dir=p.aim;
-    for(let i=0;i<5;i++)scheduled.push({t:i*0.07,fn:()=>{
-      for(const d of inArc(p.x,p.z,dir,12,1.25*PI))dmgDemon(d,34,dir,2.5);
-      for(let k=0;k<15;k++){const t=k/15,a=dir-0.6+1.2*t,r=rnd(3,11);emitStyle('flame',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,dir,1,1);}
-    }});
-    spawnRing(p.x,p.z,10,'flame');
-    p.vx+=Math.sin(dir)*6;p.vz+=Math.cos(dir)*6;
-    p.invuln=Math.max(p.invuln,0.55);shake=22;sfx(110,0.9,'sawtooth',0.12,40);
-  }}},
+flame:{name:'FLAME',kanji:'炎',list:[
+  fD('Unknowing Fire',14,0.40,38,8,2.6,{iframes:0.16,knock:1.5}),
+  fA('Rising Scorching Sun',16,0.40,34,4.5,0.85*PI,{knock:2.3}),
+  fA('Blazing Universe',22,0.55,40,5,0.95*PI,{knock:2.0}),
+  fDef('Blooming Flame Undulation',26,0.70,30,4.5),
+  fD('Flame Tiger',30,0.90,20,9,2.8,{iframes:0.2,multi:6,spread:0.4})
+],ult:{name:'Rengoku',num:'9th',run:p=>{
+  const dir=p.aim;
+  for(let i=0;i<5;i++)scheduled.push({t:i*0.07,fn:()=>{
+    for(const d of inArc(p.x,p.z,dir,14,1.2*PI))dmgDemon(d,36,dir,2.5);
+    for(let k=0;k<15;k++){const t=k/15,a=dir-0.6+1.2*t,r=rnd(3,12);emitStyle('flame',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,dir,1,1);}
+  }});
+  spawnRing(p.x,p.z,10,'flame');
+  p.vx+=Math.sin(dir)*7;p.vz+=Math.cos(dir)*7;
+  p.invuln=Math.max(p.invuln,0.55);shake=24;sfx(110,0.9,'sawtooth',0.12,40);
+}}},
 
-  thunder:{name:'THUNDER',kanji:'雷',list:[
-    fD('Thunderclap and Flash',12,0.42,40,11,1.8,{iframes:0.20}),
-    fA('Rice Spirit',18,0.45,17,4.5,1.05*PI,{hits:3,spread:0.6}),
-    fR('Thunder Swarm',26,0.70,32,6),
-    fP('Distant Thunder',22,0.55,44,32,0.7,0.85),
-    fA('Heat Lightning',26,0.70,56,5.5,0.85*PI,{knock:1.8}),
-    fM('Rumble and Flash',34,1.00,16,4.5,5,0.09)
-  ],ult:{name:'Flaming Thunder God',num:'7th Form',run:p=>{
-    const dir=p.aim,x1=p.x,z1=p.z;
-    const x2=x1+Math.sin(dir)*22,z2=z1+Math.cos(dir)*22;
-    for(const d of demons){
-      if(d.dead)continue;
-      const t=cl(((d.x-x1)*Math.sin(dir)+(d.z-z1)*Math.cos(dir))/22,0,1);
-      const cx=x1+Math.sin(dir)*22*t,cz=z1+Math.cos(dir)*22*t;
-      if(Math.hypot(d.x-cx,d.z-cz)<3+d.r)dmgDemon(d,160,dir,3);
-    }
-    for(let i=0;i<10;i++){const t=i/10;spawnBolt(lp(x1,x2,t),lp(z1,z2,t),lp(x1,x2,t+0.1),lp(z1,z2,t+0.1),'thunder',1.0,0.3);}
-    p.x=cl(x2,-AR+2,AR-2);p.z=cl(z2,-AR+2,AR-2);
-    p.invuln=Math.max(p.invuln,0.6);shake=24;sfx(900,0.35,'square',0.07,120);
-  }}},
+thunder:{name:'THUNDER',kanji:'雷',list:[
+  fD('Thunderclap and Flash',12,0.42,40,11,1.6,{iframes:0.20}),
+  fA('Rice Spirit',18,0.45,15,4.8,1.0*PI,{hits:5,spread:0.45}),
+  fSp('Thunder Swarm',26,0.70,30,5.5),
+  fL('Distant Thunder',22,0.55,46,9,1.1),
+  fA('Heat Lightning',26,0.70,52,5.5,0.8*PI,{knock:1.8}),
+  fA('Rumble and Flash',34,1.00,32,6.5,1.1*PI,{hits:3,spread:0.3,bolts:true})
+],ult:{name:'God of Fire Thunder',num:'7th',run:p=>{
+  const dir=p.aim,x1=p.x,z1=p.z,x2=x1+Math.sin(dir)*24,z2=z1+Math.cos(dir)*24;
+  for(const d of demons){if(d.dead)continue;const t=cl(((d.x-x1)*Math.sin(dir)+(d.z-z1)*Math.cos(dir))/24,0,1);
+    const cx=x1+Math.sin(dir)*24*t,cz=z1+Math.cos(dir)*24*t;
+    if(Math.hypot(d.x-cx,d.z-cz)<3+d.r)dmgDemon(d,180,dir,3);}
+  for(let i=0;i<12;i++){const t=i/12;spawnBolt(lp(x1,x2,t),lp(z1,z2,t),lp(x1,x2,t+0.1),lp(z1,z2,t+0.1),'thunder',1.2,0.3);}
+  p.x=cl(x2,-AR+2,AR-2);p.z=cl(z2,-AR+2,AR-2);
+  p.invuln=Math.max(p.invuln,0.6);shake=26;sfx(900,0.4,'square',0.08,120);
+}}},
 
-  wind:{name:'WIND',kanji:'風',list:[
-    fD('Dust Whirlwind Cutter',12,0.20,24,8,2),
-    fA('Claws-Purifying Wind',18,0.45,19,5,0.95*PI,{hits:4,spread:0.5}),
-    fR('Clean Storm Wind Tree',24,0.65,34,5),
-    fA('Rising Dust Storm',24,0.70,38,6,0.72*PI),
-    fL('Cold Mountain Wind',20,0.55,40,8,1.0),
-    fR('Black Wind Mountain Mist',28,0.80,44,5.5,{pull:true}),
-    fA('Gale, Sudden Gusts',30,0.90,36,6,1.2*PI),
-    fA('Primary Gale Slash',34,1.00,56,6,1.2*PI,{knock:2.4})
-  ],ult:{name:'Idaten Typhoon',num:'9th Form',run:p=>{
-    p.invuln=Math.max(p.invuln,0.8);
-    for(let i=0;i<5;i++)scheduled.push({t:i*0.09,fn:()=>{
-      for(const d of inRadius(p.x,p.z,11))dmgDemon(d,26,Math.atan2(d.x-p.x,d.z-p.z),3.2);
-      spawnRing(p.x,p.z,10,'wind');
-      for(let k=0;k<12;k++){const a=Math.random()*TAU,r=rnd(3,10);emitStyle('wind',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a+PI/2,1,2);}
-    }});
-    shake=22;sfx(600,0.5,'sine',0.07,1800);
-  }}},
+wind:{name:'WIND',kanji:'風',list:[
+  fD('Dust Whirlwind Cutter',12,0.20,24,8,2.0),
+  fA('Claws-Purifying Wind',18,0.45,17,5.0,0.9*PI,{hits:4,spread:0.4}),
+  fDef('Clean Storm Wind Tree',24,0.65,30,5.0),
+  fAir('Rising Dust Storm',24,0.70,32,6,3.5),
+  fL('Cold Mountain Wind',20,0.55,42,9,0.9),
+  fR('Black Wind Mountain Mist',28,0.80,44,5.5,{pull:true}),
+  fA('Gale, Sudden Gusts',30,0.90,34,6.5,1.2*PI),
+  fA('Primary Gale Slash',34,1.00,58,6,1.1*PI,{knock:2.4})
+],ult:{name:'Idaten Typhoon',num:'9th',run:p=>{
+  p.invuln=Math.max(p.invuln,0.8);
+  for(let i=0;i<5;i++)scheduled.push({t:i*0.09,fn:()=>{
+    for(const d of inRadius(p.x,p.z,12))dmgDemon(d,28,Math.atan2(d.x-p.x,d.z-p.z),3.2);
+    spawnRing(p.x,p.z,11,'wind');
+    for(let k=0;k<12;k++){const a=Math.random()*TAU,r=rnd(3,11);emitStyle('wind',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a+PI/2,1,2);}
+  }});
+  shake=24;sfx(600,0.5,'sine',0.07,1800);
+}}},
 
-  stone:{name:'STONE',kanji:'岩',list:[
-    fP('Serpentinite Bipolar',20,0.60,40,16,1.1,1.0),
-    fL('Upper Smash',24,0.65,52,8,1.6,{knock:2.5}),
-    fR('Stone Skin',18,0.55,28,5),
-    fD('Volcanic Rock, Rapid Conquest',30,0.90,58,8,2.4,{iframes:0.28,knock:2})
-  ],ult:{name:'Serpentinite Smash',num:'5th Form',run:ultBurst(10,80)}},
+stone:{name:'STONE',kanji:'岩',list:[
+  fCh('Serpentinite Bipolar',20,0.60,36,9),
+  fL('Upper Smash',24,0.65,54,8,1.4,{knock:2.5}),
+  fDef('Stone Skin',18,0.55,24,5.0),
+  fD('Volcanic Rock, Rapid Conquest',30,0.90,56,9,2.6,{iframes:0.28,knock:2}),
+  fM('Arcs of Justice',34,1.00,18,5.5,6,0.09)
+],ult:{name:'Serpentinite Smash',num:'5th',run:ultBurst(11,85)}},
 
-  mist:{name:'MIST',kanji:'霧',list:[
-    fL('Low Clouds, Distant Haze',12,0.30,26,7,0.8),
-    fA('Eight-Layered Mist',22,0.55,10,5,0.9*PI,{hits:8,spread:0.35}),
-    fR('Scattering Mist Splash',20,0.50,30,5.5),
-    fD('Shifting Flow Slash',18,0.42,36,9,1.8,{iframes:0.25}),
-    fR('Sea of Clouds and Haze',26,0.70,32,6),
-    fD('Obscuring Clouds',22,0.55,30,12,1.5,{iframes:0.4})
-  ],ult:{name:'Obscuring Clouds',num:'7th Form',run:p=>{
-    p.invuln=Math.max(p.invuln,1.0);
-    for(let i=0;i<40;i++){const a=Math.random()*TAU,s=rnd(2,8);emitStyle('mist',p.x+Math.sin(a)*s,1,p.z+Math.cos(a)*s,a,0.8,2);}
-    for(let i=0;i<4;i++)scheduled.push({t:i*0.15,fn:()=>{
-      for(const d of inRadius(p.x,p.z,8))dmgDemon(d,28,Math.atan2(d.x-p.x,d.z-p.z),2);
-      spawnRing(p.x,p.z,8,'mist');
-    }});
-    shake=16;
-  }}},
+mist:{name:'MIST',kanji:'霧',list:[
+  fL('Low Clouds, Distant Haze',12,0.30,26,7,0.7),
+  fA('Eight-Layered Mist',22,0.55,9,5.2,0.9*PI,{hits:8,spread:0.3}),
+  fDef('Scattering Mist Splash',20,0.50,28,5.5),
+  fD('Shifting Flow Slash',18,0.42,36,9,1.7,{iframes:0.25}),
+  fM('Sea of Clouds and Haze',26,0.70,14,5.5,6,0.08),
+  fAir('Lunar Dispersing Mist',30,0.85,22,6,4.0),
+  fBuff('Obscuring Clouds',24,0.70,3.0,{spd:1.8,dodge:0.4})
+],ult:{name:'Obscuring Clouds',num:'7th',run:p=>{
+  p.invuln=Math.max(p.invuln,1.0);
+  for(let i=0;i<50;i++){const a=Math.random()*TAU,s=rnd(2,8);emitStyle('mist',p.x+Math.sin(a)*s,1,p.z+Math.cos(a)*s,a,0.8,2);}
+  for(let i=0;i<4;i++)scheduled.push({t:i*0.15,fn:()=>{
+    for(const d of inRadius(p.x,p.z,9))dmgDemon(d,30,Math.atan2(d.x-p.x,d.z-p.z),2);
+    spawnRing(p.x,p.z,9,'mist');
+  }});
+  shake=18;
+}}},
 
-  love:{name:'LOVE',kanji:'恋',list:[
-    fD('Shivers of First Love',14,0.35,30,10,2.0,{iframes:0.18}),
-    fA('Love Pangs',20,0.55,36,5.5,1.15*PI),
-    fA('Catlove Shower',24,0.60,30,6,1.25*PI,{hits:3,spread:0.5}),
-    fA('Swaying Love, Wildclaw',28,0.75,40,6.5,1.4*PI),
-    fR('Cat-Legged Winds of Love',26,0.65,32,5.5)
-  ],ult:{name:'Cat-Legged Winds',num:'6th Form',run:p=>{
-    p.invuln=Math.max(p.invuln,0.7);
-    const dir=p.aim;
-    for(let i=0;i<5;i++)scheduled.push({t:i*0.1,fn:()=>{
-      for(const d of inArc(p.x,p.z,dir,10,1.5*PI))dmgDemon(d,30,dir,2.5);
-      for(let k=0;k<12;k++){const t=k/12,a=dir-0.75+1.5*t,r=rnd(3,9);emitStyle('love',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,dir,1,1);}
-    }});
-    p.vx+=Math.sin(dir)*5;p.vz+=Math.cos(dir)*5;
-    shake=20;
-  }}},
+love:{name:'LOVE',kanji:'恋',list:[
+  fD('Shivers of First Love',14,0.35,32,10,1.9,{iframes:0.18,multi:3}),
+  fA('Love Pangs',20,0.55,34,6.0,1.2*PI),
+  fAir('Catlove Shower',24,0.60,18,6,3.5,{hits:5,spread:0.4}),
+  fBk('Swaying Love, Wildclaw',28,0.75,20,6.5,{ticks:5}),
+  fA('Cat-Legged Winds of Love',26,0.65,28,6.0,1.0*PI,{hits:3,spread:0.3})
+],ult:{name:'Cat-Legged Winds',num:'6th',run:p=>{
+  p.invuln=Math.max(p.invuln,0.7);
+  const dir=p.aim;
+  for(let i=0;i<5;i++)scheduled.push({t:i*0.1,fn:()=>{
+    for(const d of inArc(p.x,p.z,dir,11,1.5*PI))dmgDemon(d,32,dir,2.5);
+    for(let k=0;k<12;k++){const t=k/12,a=dir-0.75+1.5*t,r=rnd(3,10);emitStyle('love',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,dir,1,1);}
+  }});
+  p.vx+=Math.sin(dir)*5;p.vz+=Math.cos(dir)*5;shake=20;
+}}},
 
-  insect:{name:'INSECT',kanji:'虫',list:[
-    fA('Butterfly Dance: Caprice',14,0.35,12,5,1.05*PI,{hits:4,spread:0.4}),
-    fD('Dance of the Bee Sting',18,0.40,30,10,1.5,{iframes:0.22}),
-    fL('Dance of the Dragonfly',22,0.55,36,8,1.2,{hits:3,spread:0.3}),
-    fD('Dance of the Centipede',20,0.50,28,12,1.2,{iframes:0.32})
-  ],ult:{name:'Butterfly Dance: Hexagon',num:'Final',run:p=>{
-    p.invuln=Math.max(p.invuln,0.6);
-    for(let i=0;i<6;i++){
-      const a=(i/6)*TAU;
-      for(const d of inArc(p.x,p.z,a,7,0.4))dmgDemon(d,30,a,2);
-      for(let k=0;k<10;k++){const t=k/10,r=7*t;emitStyle('insect',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a,0.8,1);}
-    }
-    for(let i=0;i<60;i++){const a=Math.random()*TAU,s=rnd(1,6);emit(p.x,1,p.z,Math.sin(a)*s,rnd(0.5,3),Math.cos(a)*s,0.6,0.4,0.9,rnd(0.3,0.6),rnd(0.5,1.0),0);}
-    shake=18;
-  }}},
+insect:{name:'INSECT',kanji:'虫',list:[
+  fAir('Butterfly Dance: Caprice',14,0.35,11,5,3.0,{hits:4,spread:0.3}),
+  fD('Dance of the Bee Sting',18,0.40,34,10,1.3,{iframes:0.22,thrust:true}),
+  fM('Dance of the Horsefly',22,0.55,10,5.0,6,0.08),
+  fL('Dance of the Dragonfly',24,0.60,13,8,0.8,{hits:6,spread:0.25}),
+  fD('Dance of the Centipede',20,0.50,30,12,1.1,{iframes:0.35,zigzag:true})
+],ult:{name:'Butterfly Dance: Hexagon',num:'Final',run:p=>{
+  p.invuln=Math.max(p.invuln,0.6);
+  for(let i=0;i<6;i++){const a=(i/6)*TAU;
+    for(const d of inArc(p.x,p.z,a,7,0.35))dmgDemon(d,30,a,2);
+    for(let k=0;k<10;k++){const t=k/10,r=7*t;emitStyle('insect',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a,0.8,1);}}
+  for(let i=0;i<50;i++){const a=Math.random()*TAU,s=rnd(1,6);emit(p.x,1,p.z,Math.sin(a)*s,rnd(0.5,3),Math.cos(a)*s,0.6,0.4,0.9,rnd(0.3,0.6),rnd(0.5,1.0),0);}
+  shake=18;
+}}},
 
-  flower:{name:'FLOWER',kanji:'花',list:[
-    fA('Orchid Blossoming',14,0.40,10,5,1.15*PI,{hits:6,spread:0.4}),
-    fR('Honorable Shadow Plum',18,0.50,26,5),
-    fA('Peonies of Futility',22,0.60,30,6,1.25*PI),
-    fR('Crimson Hanagoromo',24,0.65,34,5.5),
-    fD('Whirling Peach',26,0.70,38,10,2.2,{iframes:0.25})
-  ],ult:{name:'Equinoctial Vermilion Eye',num:'Final',run:p=>{
-    p.invuln=Math.max(p.invuln,0.8);
-    for(let i=0;i<4;i++)scheduled.push({t:i*0.12,fn:()=>{
-      for(const d of inRadius(p.x,p.z,8))dmgDemon(d,32,Math.atan2(d.x-p.x,d.z-p.z),2.5);
-      spawnRing(p.x,p.z,8,'flower');
-      for(let k=0;k<15;k++){const a=Math.random()*TAU,r=rnd(2,8);emitStyle('flower',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a,0.7,1);}
-    }});
-    shake=20;
-  }}},
+flower:{name:'FLOWER',kanji:'花',list:[
+  fA('Orchid Blossoming',14,0.40,9,5.0,1.0*PI,{hits:7,spread:0.3}),
+  fDef('Honorable Shadow Plum',18,0.50,26,5.0),
+  fA('Camellia Ascension',20,0.55,30,5.5,0.8*PI,{knock:1.8}),
+  fA('Crimson Hanagoromo',22,0.60,34,5.5,1.0*PI),
+  fA('Peonies of Futility',24,0.65,7,5.5,1.1*PI,{hits:9,spread:0.25}),
+  fSp('Whirling Peach',26,0.70,30,5.0,{evasion:true})
+],ult:{name:'Equinoctial Vermilion Eye',num:'Final',run:p=>{
+  p.buffT=5.0;p.buffCrit=1.0;p.buffSpd=1.5;
+  p.invuln=Math.max(p.invuln,0.5);
+  for(let i=0;i<30;i++){const a=Math.random()*TAU,s=rnd(1,5);emitStyle('flower',p.x+Math.sin(a)*s,1,p.z+Math.cos(a)*s,a,1,2);}
+  shake=14;
+}}},
 
-  serpent:{name:'SERPENT',kanji:'蛇',list:[
-    fA('Winding Serpent Slash',12,0.30,26,5.5,1.35*PI),
-    fL('Venom Fangs of the Narrow Head',18,0.45,44,8,1.0),
-    fR('Coil Choke',22,0.60,30,5.5,{pull:true}),
-    fA('Twin-Headed Reptile',24,0.60,34,5.5,1.0*PI,{hits:2,spread:0.4}),
-    fM('Slithering Serpent',28,0.75,18,5,4,0.12)
-  ],ult:{name:'Slithering Serpent',num:'5th Form',run:ultBurst(9,70)}},
+serpent:{name:'SERPENT',kanji:'蛇',list:[
+  fA('Winding Serpent Slash',12,0.30,28,5.5,1.3*PI,{wind:true}),
+  fD('Venom Fangs of the Narrow Head',18,0.45,46,10,0.8,{iframes:0.2,thrust:true,behind:true}),
+  fSp('Coil Choke',22,0.60,28,5.0),
+  fAir('Twin-Headed Reptile',24,0.60,34,5.5,2.8),
+  fM('Slithering Serpent',28,0.75,16,5.0,5,0.10)
+],ult:{name:'Slithering Serpent',num:'5th',run:ultBurst(10,75)}},
 
-  sound:{name:'SOUND',kanji:'音',list:[
-    fR('Roar',18,0.55,42,6,{knock:2}),
-    fA('Echoing Slash',22,0.55,32,6,1.2*PI),
-    fD('Rhythm Dash',24,0.65,42,10,2.4,{iframes:0.22}),
-    fM('Constant Resounding Slashes',30,0.85,18,5,5,0.1),
-    fA('String Performance',32,0.95,36,6,1.35*PI,{hits:4,spread:0.4})
-  ],ult:{name:'String Performance',num:'5th Form',run:ultBurst(11,90)}},
+sound:{name:'SOUND',kanji:'音',list:[
+  fA('Roar',18,0.55,46,5.0,0.9*PI,{knock:2.2}),
+  fSp('Constant Resounding Slashes',24,0.65,26,5.0,{deflect:true}),
+  fD('String Performance',30,0.85,20,11,2.2,{iframes:0.2,multi:5})
+],ult:{name:'String Performance',num:'5th',run:ultBurst(12,95)}},
 
-  beast:{name:'BEAST',kanji:'獣',list:[
-    fL('First Fang: Pierce',12,0.35,32,8,0.9,{knock:2}),
-    fA('Second Fang: Slice',16,0.40,26,5.5,1.15*PI,{hits:2,spread:0.5}),
-    fA('Fifth Fang: Crazy Cutting',24,0.60,20,6,1.5*PI,{hits:4,spread:0.7}),
-    fM('Fourth Fang: Slice \'n\' Dice',22,0.55,14,4.5,4,0.09),
-    fD('Eighth Form: Explosive Rush',26,0.70,44,12,2.2,{iframes:0.3}),
-    fL('Fang: Cross Slash',28,0.75,48,8,1.4,{knock:2.4})
-  ],ult:{name:'Beast Rampage',num:'10th Fang',run:p=>{
-    p.invuln=Math.max(p.invuln,0.7);
-    for(let i=0;i<8;i++){
-      const a=Math.random()*TAU;
-      scheduled.push({t:i*0.06,fn:()=>{
-        for(const d of inArc(p.x,p.z,a,7,0.8))dmgDemon(d,22,a,2.5);
-        for(let k=0;k<6;k++){const t=k/6,r=rnd(3,7);emitStyle('beast',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a,0.8,1);}
-      }});
-    }
-    shake=22;
-  }}},
+beast:{name:'BEAST',kanji:'獣',list:[
+  fL('First Fang: Pierce',12,0.35,34,8,0.8,{knock:2}),
+  fA('Second Fang: Slice',16,0.40,26,5.5,1.0*PI,{hits:2,spread:0.35,xcross:true}),
+  fA('Third Fang: Devour',20,0.50,30,5.5,0.8*PI,{hits:2,spread:0.25}),
+  fA('Fourth Fang: Slice n Dice',22,0.55,14,5.5,1.2*PI,{hits:6,spread:0.4}),
+  fAir('Fifth Fang: Crazy Cutting',24,0.60,20,5.5,4.0),
+  fA('Sixth Fang: Palisade Bite',26,0.65,16,5.5,0.9*PI,{hits:4,spread:0.3,saw:true}),
+  fBuff('Seventh Form: Spatial Awareness',18,0.50,4.0,{spd:1.3,crit:0.5}),
+  fD('Eighth Form: Explosive Rush',28,0.75,48,13,2.4,{iframes:0.4,ignore:true}),
+  fL('Ninth Fang: Extending Bendy Slash',30,0.80,52,10,1.0,{knock:2.4}),
+  fSp('Tenth Fang: Whirling Fangs',32,0.90,34,5.5,{deflect:true})
+],ult:{name:'Beast Rampage',num:'10th',run:p=>{
+  p.invuln=Math.max(p.invuln,0.7);
+  for(let i=0;i<8;i++){const a=Math.random()*TAU;
+    scheduled.push({t:i*0.06,fn:()=>{
+      for(const d of inArc(p.x,p.z,a,8,0.7))dmgDemon(d,24,a,2.5);
+      for(let k=0;k<6;k++){const t=k/6,r=rnd(3,8);emitStyle('beast',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a,0.8,1);}
+    }});}
+  shake=24;
+}}},
 
-  moon:{name:'MOON',kanji:'月',list:[
-    fA('Dark Moon, Evening Palace',12,0.30,30,6,1.35*PI),
-    fP('Pearl Flower Moongazing',20,0.55,44,20,1.0,1.3),
-    fA('Loathsome Moon, Chains',24,0.60,32,6,1.0*PI,{hits:2,spread:0.5}),
-    fM('Perpetual Night, Lonely Moon',28,0.75,16,5.5,5,0.1),
-    fL('Moon-Dragon Ringtail',32,0.90,60,10,1.6,{knock:2.2}),
-    fR('Moonlit Cage',30,0.85,36,6)
-  ],ult:{name:'Moonlit Cage',num:'16th Form',run:p=>{
-    p.invuln=Math.max(p.invuln,0.9);
-    for(let i=0;i<6;i++)scheduled.push({t:i*0.1,fn:()=>{
-      const a=(i/6)*TAU;
-      for(const d of inArc(p.x,p.z,a,8,1.0*PI))dmgDemon(d,30,a,2.5);
-      for(let k=0;k<12;k++){const t=k/12,r=8*t;emitStyle('moon',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a,0.8,1);}
-    }});
-    spawnRing(p.x,p.z,10,'moon');shake=22;
-  }}},
+moon:{name:'MOON',kanji:'月',list:[
+  fD('Dark Moon, Evening Palace',12,0.30,32,8,1.5,{iframes:0.15,crescent:true}),
+  fA('Pearl Flower Moongazing',20,0.55,36,6.0,1.0*PI,{hits:3,spread:0.3,crescent:true}),
+  fA('Loathsome Moon, Chains',24,0.60,30,6.0,1.2*PI,{hits:2,spread:0.4,crescent:true}),
+  fSp('Moon Spirit Calamitous Eddy',28,0.75,28,6.0,{crescent:true}),
+  fM('Perpetual Night, Lonely Moon',30,0.85,15,6.0,6,0.08),
+  fDef('Mirror of Misfortune, Moonlit',26,0.70,28,5.5),
+  fL('Moon-Dragon Ringtail',32,0.90,62,10,1.4,{knock:2.2}),
+  fSp('Moonlit Cage',34,0.95,30,7.0,{cage:true})
+],ult:{name:'Moonlit Cage',num:'16th',run:p=>{
+  p.invuln=Math.max(p.invuln,0.9);
+  for(let i=0;i<6;i++){const a=(i/6)*TAU;
+    scheduled.push({t:i*0.1,fn:()=>{
+      for(const d of inArc(p.x,p.z,a,9,0.9*PI))dmgDemon(d,32,a,2.5);
+      for(let k=0;k<12;k++){const t=k/12,r=9*t;emitStyle('moon',p.x+Math.sin(a)*r,1,p.z+Math.cos(a)*r,a,0.8,1);}
+    }});}
+  spawnRing(p.x,p.z,10,'moon');shake=24;
+}}},
 
-  sun:{name:'SUN',kanji:'日',list:[
-    fA('Dance',10,0.20,26,5,1.35*PI),
-    fR('Clear Blue Sky',16,0.45,30,5,{knock:1.6}),
-    fA('Raging Sun',20,0.50,26,5.5,1.05*PI,{hits:2,spread:0.5}),
-    fR('Burning Bones, Summer Sun',22,0.55,32,5.5),
-    fD('Setting Sun Transformation',24,0.65,40,10,2.0,{iframes:0.25}),
-    fP('Solar Heat Haze',26,0.70,46,24,1.1,1.1),
-    fL('Sunflower Thrust',28,0.80,54,9,1.0,{knock:2.2}),
-    fA('Dragon Sun Halo Head Dance',32,0.90,48,6,1.35*PI,{hits:3,spread:0.5})
-  ],ult:{name:'13th Form',num:'Chain',run:p=>{
-    p.invuln=Math.max(p.invuln,0.8);
-    const dirs=[0,PI/4,PI/2,3*PI/4,PI,5*PI/4,3*PI/2,7*PI/4];
-    dirs.forEach((a,i)=>scheduled.push({t:i*0.08,fn:()=>{
-      const dd=p.aim+a;
-      for(const d of inArc(p.x,p.z,dd,8,1.0*PI))dmgDemon(d,26,dd,2.5);
-      for(let k=0;k<10;k++){const t=k/10,r=rnd(3,8);emitStyle('sun',p.x+Math.sin(dd)*r,1,p.z+Math.cos(dd)*r,dd,1,1);}
-    }}));
-    spawnRing(p.x,p.z,10,'sun');shake=26;sfx(400,0.9,'sawtooth',0.12,60);
-  }}}
+sun:{name:'SUN',kanji:'日',list:[
+  fA('Dance',10,0.20,28,5.0,1.2*PI,{vertical:true}),
+  fSp('Clear Blue Sky',16,0.45,32,5.0),
+  fA('Raging Sun',20,0.50,26,5.5,1.0*PI,{hits:2,spread:0.4}),
+  fA('Burning Bones, Summer Sun',22,0.55,34,5.5,1.1*PI,{spiral:true}),
+  fAir('Setting Sun Transformation',24,0.65,38,8,3.5),
+  fD('Solar Heat Haze',26,0.70,44,10,1.6,{iframes:0.15}),
+  fA('Beneficent Radiance',26,0.70,34,6.0,0.9*PI,{spiralUp:true}),
+  fL('Sunflower Thrust',28,0.80,56,9,0.8,{knock:2.2,upward:true}),
+  fA('Dragon Sun Halo Head Dance',32,0.90,38,6.5,1.2*PI,{hits:4,spread:0.35}),
+  fAir('Fire Wheel',30,0.85,40,8,3.0,{vertical:true}),
+  fBuff('Fake Rainbow',22,0.60,3.5,{dodge:0.6,spd:1.4}),
+  fA('Flame Dance',34,0.95,36,6.0,1.0*PI,{hits:2,spread:0.5,combo:true})
+],ult:{name:'13th Form',num:'Chain',run:p=>{
+  p.invuln=Math.max(p.invuln,0.9);
+  const dirs=[0,PI/4,PI/2,3*PI/4,PI,5*PI/4,3*PI/2,7*PI/4];
+  dirs.forEach((a,i)=>scheduled.push({t:i*0.08,fn:()=>{
+    const dd=p.aim+a;
+    for(const d of inArc(p.x,p.z,dd,9,0.9*PI))dmgDemon(d,28,dd,2.5);
+    for(let k=0;k<10;k++){const t=k/10,r=rnd(3,9);emitStyle('sun',p.x+Math.sin(dd)*r,1,p.z+Math.cos(dd)*r,dd,1,1);}
+  }}));
+  spawnRing(p.x,p.z,10,'sun');shake=28;sfx(400,0.9,'sawtooth',0.12,60);
+}}}
 };
 
-/* ---- DEMONS ---- */
+/* ================= DEMONS ================= */
 const TYPES={
   grunt:{r:0.55,hp:40,sp:5.5,dmg:9,col:0x6a2a8a,sc:100},
   swift:{r:0.42,hp:26,sp:9,dmg:6,col:0xb03a6a,sc:130},
@@ -593,40 +590,35 @@ function makeDemon(type,x,z){
     hitFlash:0,stun:0,atkCd:0,windup:0,charging:0,cdx:0,cdz:0,chargeCd:4,mesh,dead:false};
 }
 
-/* ---- DAMAGE QUERIES ---- */
+/* ================= QUERIES ================= */
 function inArc(px,pz,dir,range,arc){
   const o=[];
-  for(const d of demons){
-    if(d.dead)continue;
+  for(const d of demons){if(d.dead)continue;
     const dx=d.x-px,dz=d.z-pz;
-    if(Math.hypot(dx,dz)<range+d.r&&Math.abs(ad(Math.atan2(dx,dz),dir))<arc/2)o.push(d);
-  }
+    if(Math.hypot(dx,dz)<range+d.r&&Math.abs(ad(Math.atan2(dx,dz),dir))<arc/2)o.push(d);}
   return o;
 }
 function inRadius(px,pz,r){
   const o=[];
-  for(const d of demons){
-    if(d.dead)continue;
-    if(Math.hypot(d.x-px,d.z-pz)<r+d.r)o.push(d);
-  }
+  for(const d of demons){if(d.dead)continue;if(Math.hypot(d.x-px,d.z-pz)<r+d.r)o.push(d);}
   return o;
 }
 function inLine(px,pz,dir,len,w){
   const ux=Math.sin(dir),uz=Math.cos(dir),o=[];
-  for(const d of demons){
-    if(d.dead)continue;
+  for(const d of demons){if(d.dead)continue;
     const dx=d.x-px,dz=d.z-pz,t=dx*ux+dz*uz;
     if(t<-d.r||t>len+d.r)continue;
-    if(Math.hypot(dx-ux*t,dz-uz*t)<w/2+d.r)o.push(d);
-  }
+    if(Math.hypot(dx-ux*t,dz-uz*t)<w/2+d.r)o.push(d);}
   return o;
 }
 function dmgDemon(d,dmg,dir,knock){
   if(d.dead)return;
-  d.hp-=dmg;d.hitFlash=1;d.stun=Math.max(d.stun,0.1);
+  const crit=player.buffCrit&&Math.random()<player.buffCrit?1.6:1;
+  const finalDmg=Math.round(dmg*crit);
+  d.hp-=finalDmg;d.hitFlash=1;d.stun=Math.max(d.stun,0.1);
   const k=(knock||1)*(d.type==='boss'?0.25:d.type==='brute'?0.5:1);
   d.vx+=Math.sin(dir)*4*k;d.vz+=Math.cos(dir)*4*k;
-  player.breath=Math.min(100,player.breath+dmg*0.16);
+  player.breath=Math.min(100,player.breath+finalDmg*0.16);
   player.chain++;player.chainT=1.1;
   for(let i=0;i<5;i++){const a=dir+rnd(-1.2,1.2),s=rnd(2,5);emit(d.x,0.8,d.z,Math.sin(a)*s,rnd(0.5,2.5),Math.cos(a)*s,1,0.15,0.3,rnd(0.2,0.4),rnd(0.3,0.5),4);}
   if(d.hp<=0)killDemon(d);
@@ -641,7 +633,7 @@ function killDemon(d){
 }
 function hurtPlayer(dmg,nx,nz){
   const p=player;
-  if(p.invuln>0)return;
+  if(p.invuln>0||(p.buffT>0&&p.buffDodge>0&&Math.random()<p.buffDodge))return;
   p.hp-=dmg;p.invuln=0.85;p.vx+=nx*6;p.vz+=nz*6;
   p.chain=0;p.chainT=0;shake=Math.max(shake,14);
   sfx(140,0.25,'square',0.1,60);
@@ -656,7 +648,7 @@ function die(){
   shake=22;
 }
 
-/* ---- FX SPAWNERS ---- */
+/* ================= FX SPAWNERS ================= */
 function spawnArc(px,pz,dir,range,arc,style){
   const c=SC[style],seg=24;
   const pos=[px,0.3,pz],idx=[];
@@ -691,7 +683,7 @@ function spawnBolt(x1,z1,x2,z2,style,jag,life){
   bolts.push({line,mat,life,max:life});
 }
 
-/* ---- FORM EXECUTION ---- */
+/* ================= FORM EXECUTION ================= */
 function pickForm(i){
   const f=FORMS[player.style].list;
   const n=((i%f.length)+f.length)%f.length;
@@ -704,41 +696,36 @@ function runForm(p){
   if(p.stam<f.cost){sfx(180,0.06,'square',0.02);return;}
   p.stam-=f.cost;p.stamDelay=0.3;p.atkCd=f.cd;
   const dir=p.aim;
+
   if(f.t==='arc'){
     const hits=f.hits||1,spread=f.spread||0;
     for(let i=0;i<hits;i++){
       const a=dir+(hits>1?(i-(hits-1)/2)*spread:0);
       spawnArc(p.x,p.z,a,f.range,f.arc,p.style);
       for(const d of inArc(p.x,p.z,a,f.range,f.arc))dmgDemon(d,f.dmg,a,1.2);
-      for(let k=0;k<6;k++){const t=k/6,aa=a-f.arc/2+f.arc*t,rr=f.range*rnd(0.5,1);emitStyle(p.style,p.x+Math.sin(aa)*rr,0.8,p.z+Math.cos(aa)*rr,a,0.5,1);}
-      if(p.style==='thunder')spawnBolt(p.x,p.z,p.x+Math.sin(a)*f.range,p.z+Math.cos(a)*f.range,p.style,0.5,0.15);
+      for(let k=0;k<5;k++){const t=k/5,aa=a-f.arc/2+f.arc*t,rr=f.range*rnd(0.5,1);emitStyle(p.style,p.x+Math.sin(aa)*rr,0.8,p.z+Math.cos(aa)*rr,a,0.5,1);}
     }
     p.vx+=Math.sin(dir)*2;p.vz+=Math.cos(dir)*2;
   }
   else if(f.t==='ring'){
-    if(f.pull){
-      for(const d of inRadius(p.x,p.z,f.radius*1.5)){
-        if(d.type==='boss')continue;
-        const a=Math.atan2(p.x-d.x,p.z-d.z);
-        d.vx+=Math.sin(a)*4;d.vz+=Math.cos(a)*4;
-      }
-    }
+    if(f.pull)for(const d of inRadius(p.x,p.z,f.radius*1.5)){if(d.type==='boss')continue;const a=Math.atan2(p.x-d.x,p.z-d.z);d.vx+=Math.sin(a)*4;d.vz+=Math.cos(a)*4;}
     for(const d of inRadius(p.x,p.z,f.radius))dmgDemon(d,f.dmg,Math.atan2(d.x-p.x,d.z-p.z),1.4);
     spawnRing(p.x,p.z,f.radius,p.style);
     for(let k=0;k<10;k++){const a=Math.random()*TAU;emitStyle(p.style,p.x+Math.sin(a)*f.radius*0.85,0.9,p.z+Math.cos(a)*f.radius*0.85,a,0.4,1);}
-    if(p.style==='thunder')for(let k=0;k<4;k++){const a=Math.random()*TAU;spawnBolt(p.x,p.z,p.x+Math.sin(a)*f.radius,p.z+Math.cos(a)*f.radius,p.style,0.7,0.18);}
   }
   else if(f.t==='dash'){
     const ux=Math.sin(dir),uz=Math.cos(dir);
     const x1=p.x,z1=p.z,x2=x1+ux*f.dist,z2=z1+uz*f.dist;
-    for(const d of demons){
-      if(d.dead)continue;
-      const t=cl(((d.x-x1)*ux+(d.z-z1)*uz)/f.dist,0,1);
-      const cx=x1+ux*f.dist*t,cz=z1+uz*f.dist*t;
-      if(Math.hypot(d.x-cx,d.z-cz)<f.w/2+d.r)dmgDemon(d,f.dmg,dir,1.3);
+    const hits=f.multi||1;
+    for(let h=0;h<hits;h++){
+      const off=hits>1?(h-(hits-1)/2)*0.3:0;
+      const dd=dir+off;
+      for(const d of demons){if(d.dead)continue;
+        const t=cl(((d.x-x1)*ux+(d.z-z1)*uz)/f.dist,0,1);
+        const cx=x1+ux*f.dist*t,cz=z1+uz*f.dist*t;
+        if(Math.hypot(d.x-cx,d.z-cz)<f.w/2+d.r)dmgDemon(d,f.dmg/hits,dd,1.3);}
     }
     for(let i=0;i<=8;i++){const t=i/8;emitStyle(p.style,lp(x1,x2,t),0.9,lp(z1,z2,t),dir,0.6,2);}
-    if(p.style==='thunder')spawnBolt(x1,z1,x2,z2,p.style,1.0,0.22);
     p.x=cl(x2,-AR+2,AR-2);p.z=cl(z2,-AR+2,AR-2);
     p.invuln=Math.max(p.invuln,f.iframes||0.18);
   }
@@ -760,12 +747,60 @@ function runForm(p){
     mesh.position.set(p.x,1.1,p.z);scene.add(mesh);
     projectiles.push({mesh,x:p.x,z:p.z,vx:Math.sin(dir)*f.speed,vz:Math.cos(dir)*f.speed,r:f.r,dmg:f.dmg,style:p.style,life:f.life,maxLife:f.life,hit:new Set()});
     p.vx-=Math.sin(dir)*1.5;p.vz-=Math.cos(dir)*1.5;
-    emitStyle(p.style,p.x+Math.sin(dir)*0.8,1,p.z+Math.cos(dir)*0.8,dir,0.7,8);
+  }
+  else if(f.t==='spin'){
+    for(const d of inRadius(p.x,p.z,f.radius))dmgDemon(d,f.dmg,Math.atan2(d.x-p.x,d.z-p.z),1.5);
+    spawnRing(p.x,p.z,f.radius,p.style);
+    for(let k=0;k<12;k++){const a=(k/12)*TAU;emitStyle(p.style,p.x+Math.sin(a)*f.radius,0.9,p.z+Math.cos(a)*f.radius,a,0.5,2);}
+    if(f.evasion)p.invuln=Math.max(p.invuln,0.4);
+    if(f.deflect)p.invuln=Math.max(p.invuln,0.35);
+    p.vx*=0.3;p.vz*=0.3;
+  }
+  else if(f.t==='aerial'){
+    const ux=Math.sin(dir),uz=Math.cos(dir);
+    const x2=cl(p.x+ux*f.dist,-AR+2,AR-2),z2=cl(p.z+uz*f.dist,-AR+2,AR-2);
+    for(const d of demons){if(d.dead)continue;
+      const t=cl(((d.x-p.x)*ux+(d.z-p.z)*uz)/f.dist,0,1);
+      const cx=p.x+ux*f.dist*t,cz=p.z+uz*f.dist*t;
+      if(Math.hypot(d.x-cx,d.z-cz)<f.radius+d.r)dmgDemon(d,f.dmg,dir,1.6);}
+    spawnRing(x2,z2,f.radius,p.style);
+    for(let i=0;i<=8;i++){const t=i/8;emitStyle(p.style,lp(p.x,x2,t),1+Math.sin(t*PI)*2,lp(p.z,z2,t),dir,0.7,2);}
+    p.x=x2;p.z=z2;p.invuln=Math.max(p.invuln,0.25);
+  }
+  else if(f.t==='backflip'){
+    const ux=Math.sin(dir),uz=Math.cos(dir);
+    const x2=cl(p.x-ux*6,-AR+2,AR-2),z2=cl(p.z-uz*6,-AR+2,AR-2);
+    for(let i=0;i<(f.ticks||5);i++)scheduled.push({t:i*0.08,fn:()=>{
+      for(const d of inRadius(p.x,p.z,f.radius))dmgDemon(d,f.dmg,Math.atan2(d.x-p.x,d.z-p.z),1.2);
+      spawnRing(p.x,p.z,f.radius,p.style);
+    }});
+    p.x=x2;p.z=z2;p.invuln=Math.max(p.invuln,0.4);
+  }
+  else if(f.t==='def'){
+    for(const d of inRadius(p.x,p.z,f.radius))dmgDemon(d,f.dmg,Math.atan2(d.x-p.x,d.z-p.z),1.6);
+    spawnRing(p.x,p.z,f.radius,p.style);
+    spawnRing(p.x,p.z,f.radius*0.7,p.style);
+    p.invuln=Math.max(p.invuln,0.45);
+  }
+  else if(f.t==='buff'){
+    p.buffT=f.dur||3;
+    p.buffSpd=f.spd||1;p.buffDodge=f.dodge||0;p.buffCrit=f.crit||0;
+    spawnRing(p.x,p.z,3,p.style);
+    emitStyle(p.style,p.x,1,p.z,0,0.9,20);
+  }
+  else if(f.t==='chain'){
+    const ux=Math.sin(dir),uz=Math.cos(dir);
+    const x2=p.x+ux*f.len,z2=p.z+uz*f.len;
+    for(let i=0;i<3;i++)scheduled.push({t:i*0.08,fn:()=>{
+      for(const d of inLine(p.x,p.z,dir,f.len,1.2))dmgDemon(d,f.dmg/3,dir,1.2);
+      spawnBolt(p.x,p.z,x2,z2,p.style,0.8,0.15);
+    }});
+    for(let i=0;i<=6;i++){const t=i/6;emitStyle(p.style,lp(p.x,x2,t),0.9,lp(p.z,z2,t),dir,0.6,2);}
   }
   shake=Math.max(shake,4);sfxSt(p.style);
 }
 
-/* ---- WAVES ---- */
+/* ================= WAVES ================= */
 function findSpawn(){
   for(let i=0;i<40;i++){
     const a=Math.random()*TAU,r=AR-3,x=Math.cos(a)*r,z=Math.sin(a)*r;
@@ -788,7 +823,7 @@ function startWave(){
   waveState='active';sfx(330,0.22,'triangle',0.05,520);
 }
 
-/* ---- UPDATE ---- */
+/* ================= UPDATE ================= */
 function update(dt){
   for(let i=scheduled.length-1;i>=0;i--){scheduled[i].t-=dt;if(scheduled[i].t<=0){scheduled[i].fn();scheduled.splice(i,1);}}
   if(state!=='playing')return;
@@ -805,6 +840,8 @@ function update(dt){
   p.atkCd=Math.max(0,p.atkCd-dt);p.dashCd=Math.max(0,p.dashCd-dt);
   p.invuln=Math.max(0,p.invuln-dt);p.ultLock=Math.max(0,p.ultLock-dt);
   p.chainT=Math.max(0,p.chainT-dt);if(p.chainT<=0)p.chain=0;
+  p.buffT=Math.max(0,p.buffT-dt);
+  if(p.buffT<=0){p.buffSpd=0;p.buffDodge=0;p.buffCrit=0;}
   p.stamDelay=Math.max(0,p.stamDelay-dt);
   if(p.stamDelay<=0)p.stam=Math.min(p.maxStam,p.stam+34*dt);
   p.breath=Math.min(100,p.breath+1.6*dt);
@@ -815,9 +852,10 @@ function update(dt){
   if(keys['w']||keys['ArrowUp'])iz-=1;
   if(keys['s']||keys['ArrowDown'])iz+=1;
   const il=Math.hypot(ix,iz);if(il>0){ix/=il;iz/=il;}
+  const spdMul=1+(p.buffSpd||0);
 
   if(p.dashT>0){p.dashT-=dt;p.vx=Math.sin(p.dashDir)*28;p.vz=Math.cos(p.dashDir)*28;}
-  else{p.vx+=ix*30*dt;p.vz+=iz*30*dt;const d=Math.exp(-9*dt);p.vx*=d;p.vz*=d;}
+  else{p.vx+=ix*30*dt*spdMul;p.vz+=iz*30*dt*spdMul;const d=Math.exp(-9*dt);p.vx*=d;p.vz*=d;}
 
   p.x+=p.vx*dt;p.z+=p.vz*dt;
   const dToC=Math.hypot(p.x,p.z);
@@ -828,35 +866,16 @@ function update(dt){
   if(pressed.has('['))pickForm(p.formIdx-1);
   if(pressed.has(']'))pickForm(p.formIdx+1);
 
-  if(pressed.has('q')){
-    const idx=SO.indexOf(p.style);
-    p.style=SO[(idx+1)%SO.length];p.formIdx=0;
-    updateWeapon(p.style);
-    emitStyle(p.style,p.x,1,p.z,0,0.9,22);
-    spawnRing(p.x,p.z,3,p.style);
-    sfx(420,0.22,'triangle',0.06,780);
-  }
-  if(pressed.has('z')){
-    const idx=SO.indexOf(p.style);
-    p.style=SO[(idx-1+SO.length)%SO.length];p.formIdx=0;
-    updateWeapon(p.style);
-    emitStyle(p.style,p.x,1,p.z,0,0.9,22);
-    spawnRing(p.x,p.z,3,p.style);
-    sfx(420,0.22,'triangle',0.06,780);
-  }
+  if(pressed.has('q')){const idx=SO.indexOf(p.style);p.style=SO[(idx+1)%SO.length];p.formIdx=0;updateWeapon(p.style);emitStyle(p.style,p.x,1,p.z,0,0.9,22);spawnRing(p.x,p.z,3,p.style);sfx(420,0.22,'triangle',0.06,780);}
+  if(pressed.has('z')){const idx=SO.indexOf(p.style);p.style=SO[(idx-1+SO.length)%SO.length];p.formIdx=0;updateWeapon(p.style);emitStyle(p.style,p.x,1,p.z,0,0.9,22);spawnRing(p.x,p.z,3,p.style);sfx(420,0.22,'triangle',0.06,780);}
 
-  if(pressed.has('e')&&p.breath>=100&&p.ultLock<=0){
-    p.breath=0;p.ultLock=0.35;
-    FORMS[p.style].ult.run(p);
-  }
+  if(pressed.has('e')&&p.breath>=100&&p.ultLock<=0){p.breath=0;p.ultLock=0.35;FORMS[p.style].ult.run(p);}
 
   if((pressed.has(' ')||pressed.has('Shift'))&&p.dashCd<=0&&p.dashT<=0){
     let dx=ix,dz=iz;
     if(dx===0&&dz===0){dx=Math.sin(p.aim);dz=Math.cos(p.aim);}
-    p.dashDir=Math.atan2(dx,dz);
-    p.dashT=0.15;p.dashCd=0.42;p.invuln=Math.max(p.invuln,0.24);
-    emitStyle(p.style,p.x,1,p.z,p.dashDir+PI,0.6,10);
-    sfx(660,0.14,'sine',0.05,220);
+    p.dashDir=Math.atan2(dx,dz);p.dashT=0.15;p.dashCd=0.42;p.invuln=Math.max(p.invuln,0.24);
+    emitStyle(p.style,p.x,1,p.z,p.dashDir+PI,0.6,10);sfx(660,0.14,'sine',0.05,220);
   }
 
   if(mdown||keys['j'])runForm(p);
@@ -899,12 +918,8 @@ function update(dt){
       const b=demons[j];if(b.dead)continue;
       const dx=b.x-a.x,dz=b.z-a.z,dd=Math.hypot(dx,dz)||0.001;
       const minD=a.r+b.r;
-      if(dd<minD){
-        const push=(minD-dd)*0.5,ux=dx/dd,uz=dz/dd;
-        const wa=b.r/(a.r+b.r),wb=a.r/(a.r+b.r);
-        a.x-=ux*push*wa;a.z-=uz*push*wa;
-        b.x+=ux*push*wb;b.z+=uz*push*wb;
-      }
+      if(dd<minD){const push=(minD-dd)*0.5,ux=dx/dd,uz=dz/dd;const wa=b.r/(a.r+b.r),wb=a.r/(a.r+b.r);
+        a.x-=ux*push*wa;a.z-=uz*push*wa;b.x+=ux*push*wb;b.z+=uz*push*wb;}
     }
   }
   for(let i=demons.length-1;i>=0;i--)if(demons[i].dead)demons.splice(i,1);
@@ -914,10 +929,8 @@ function update(dt){
     pr.x+=pr.vx*dt;pr.z+=pr.vz*dt;pr.life-=dt;
     pr.mesh.position.set(pr.x,1.1,pr.z);
     for(let k=0;k<2;k++){const a=Math.atan2(pr.vx,pr.vz)+PI+rnd(-0.7,0.7);emitStyle(pr.style,pr.x+rnd(-0.2,0.2),1,pr.z+rnd(-0.2,0.2),a,0.4,1);}
-    for(const d of demons){
-      if(d.dead||pr.hit.has(d))continue;
-      if(Math.hypot(d.x-pr.x,d.z-pr.z)<pr.r+d.r){pr.hit.add(d);dmgDemon(d,pr.dmg,Math.atan2(pr.vx,pr.vz),1.4);}
-    }
+    for(const d of demons){if(d.dead||pr.hit.has(d))continue;
+      if(Math.hypot(d.x-pr.x,d.z-pr.z)<pr.r+d.r){pr.hit.add(d);dmgDemon(d,pr.dmg,Math.atan2(pr.vx,pr.vz),1.4);}}
     if(pr.life<=0){scene.remove(pr.mesh);projectiles.splice(i,1);}
   }
 
@@ -933,7 +946,7 @@ function update(dt){
   cam.lookAt(p.x*0.4,0,p.z*0.4);
 }
 
-/* ---- HUD ---- */
+/* ================= HUD ================= */
 const hHp=document.getElementById('hpF'),hSt=document.getElementById('stF'),hBr=document.getElementById('brF');
 const hName=document.getElementById('sname'),hForms=document.getElementById('forms');
 const hWave=document.getElementById('waveI'),hScore=document.getElementById('score'),hChain=document.getElementById('chain');
@@ -961,7 +974,7 @@ function updateHUD(){
   else hChain.style.opacity=0;
 }
 
-/* ---- OVERLAY ---- */
+/* ================= OVERLAY ================= */
 const ov=document.getElementById('ov'),hud=document.getElementById('hud');
 ov.addEventListener('click',()=>{
   initAudio();
@@ -972,7 +985,7 @@ ov.addEventListener('click',()=>{
   }
 });
 
-/* ---- RENDER ---- */
+/* ================= RENDER ================= */
 function render(){
   const sh=shake;
   const sx=sh>0?rnd(-sh,sh)*0.01:0,sz=sh>0?rnd(-sh,sh)*0.01:0;
@@ -981,7 +994,7 @@ function render(){
   cam.position.x-=sx;cam.position.z-=sz;
 }
 
-/* ---- LOOP ---- */
+/* ================= LOOP ================= */
 let last=performance.now(),hudFrames=0;
 function loop(ts){
   requestAnimationFrame(loop);
