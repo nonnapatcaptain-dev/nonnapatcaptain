@@ -9,14 +9,14 @@
     font-family:Georgia,serif;user-select:none;-webkit-user-select:none;}
   canvas{display:block;cursor:crosshair;}
   #hud{position:fixed;inset:0;pointer-events:none;color:#ddeeff;
-    font-family:Georgia,serif;text-shadow:0 2px 4px rgba(0,0,0,0.9);}
+    text-shadow:0 2px 4px rgba(0,0,0,0.9);}
   #hud.hidden{display:none;}
   .panel{position:absolute;}
   .topleft{top:20px;left:22px;}
   .topright{top:20px;right:22px;text-align:right;}
   .bottomright{bottom:20px;right:22px;text-align:right;font-size:10px;opacity:0.4;}
   .bar-label{font-size:9px;letter-spacing:2px;opacity:0.65;margin-bottom:2px;}
-  .bar{width:260px;height:7px;background:rgba(0,0,0,0.55);
+  .bar{width:250px;height:7px;background:rgba(0,0,0,0.55);
     border:1px solid rgba(255,255,255,0.12);border-radius:4px;overflow:hidden;margin-bottom:7px;}
   .bar-fill{height:100%;transition:width 0.08s linear;}
   #hp-fill{background:linear-gradient(90deg,#ff2b52,#ff9a4d);}
@@ -26,28 +26,28 @@
   .style-sub{font-size:9px;opacity:0.5;letter-spacing:1px;}
   #forms{position:absolute;bottom:20px;left:22px;font-size:11px;line-height:1.4;
     max-height:55vh;overflow:hidden;}
-  .form-row{padding:1px 8px;border-radius:3px;margin-bottom:0;transition:background 0.1s;white-space:nowrap;}
+  .form-row{padding:1px 8px;border-radius:3px;white-space:nowrap;}
   .form-row.sel{background:rgba(255,255,255,0.1);border-left:3px solid currentColor;padding-left:5px;}
   .form-row .num{opacity:0.45;display:inline-block;width:16px;}
   .form-row .cost{opacity:0.4;font-size:9px;margin-left:8px;}
   #wave-info{font-size:24px;font-weight:bold;margin-bottom:2px;}
   #score{font-size:14px;color:#ffd98a;letter-spacing:1px;}
   #chain{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
-    font-size:24px;font-weight:bold;opacity:0;}
-  #overlay{position:fixed;inset:0;background:rgba(4,3,10,0.88);
+    font-size:24px;font-weight:bold;opacity:0;transition:opacity 0.15s;}
+  #overlay{position:fixed;inset:0;background:rgba(4,3,10,0.9);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    color:#eaf7ff;font-family:Georgia,serif;text-align:center;}
+    color:#eaf7ff;text-align:center;}
   #overlay.hidden{display:none;}
-  #overlay h1{font-size:56px;margin:0;letter-spacing:6px;
+  #overlay h1{font-size:52px;margin:0;letter-spacing:6px;
     text-shadow:0 0 40px #3fa9ff,0 0 80px #1e6bff;}
   #overlay h2{font-size:16px;font-style:italic;opacity:0.7;margin:10px 0 30px;letter-spacing:2px;}
   #overlay .controls{font-size:13px;line-height:2;opacity:0.85;}
   #overlay .controls b{color:#9fe6ff;}
   #overlay .start{margin-top:30px;font-size:20px;color:#ffd98a;letter-spacing:3px;
-    animation:pulse 1.6s ease-in-out infinite;}
+    animation:pulse 1.6s ease-in-out infinite;cursor:pointer;}
   @keyframes pulse{0%,100%{opacity:0.45;}50%{opacity:1;}}
-  #overlay.dead h1{color:#ffdfe6;text-shadow:0 0 40px #ff2b52;font-size:48px;}
-  #overlay.dead h2{color:#ffd98a;font-style:normal;font-size:22px;}
+  #overlay.dead h1{color:#ffdfe6;text-shadow:0 0 40px #ff2b52;font-size:44px;}
+  #overlay.dead h2{color:#ffd98a;font-style:normal;font-size:20px;}
 </style>
 </head>
 <body>
@@ -60,7 +60,7 @@
     <div class="bar-label">BREATHING</div>
     <div class="bar"><div id="breath-fill" class="bar-fill" style="width:0%"></div></div>
     <div class="style-name" id="style-name">水 WATER</div>
-    <div class="style-sub" id="style-sub">[Q] style · [1-0] form</div>
+    <div class="style-sub">[Q] style · [1-0 / wheel] form</div>
   </div>
   <div class="panel topright">
     <div id="wave-info">WAVE 1</div>
@@ -88,105 +88,99 @@
 import * as THREE from 'three';
 
 const PI = Math.PI, TAU = PI * 2;
-const rand = (a,b) => a + Math.random()*(b-a);
-const clamp = (v,a,b) => v<a?a:v>b?b:v;
-const lerp = (a,b,t) => a + (b-a)*t;
-function angDiff(a,b){let d=(a-b)%TAU;if(d>PI)d-=TAU;if(d<-PI)d+=TAU;return d;}
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+function angDiff(a, b){ let d = (a - b) % TAU; if (d > PI) d -= TAU; if (d < -PI) d += TAU; return d; }
 
-/* ================= SCENE ================= */
+/* ---------- SCENE ---------- */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x05030a);
-scene.fog = new THREE.FogExp2(0x05030a, 0.014);
+scene.fog = new THREE.FogExp2(0x05030a, 0.018);
 
-const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 200);
-camera.position.set(0, 18, 14);
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 22, 16);
+camera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
 document.body.appendChild(renderer.domElement);
 
 addEventListener('resize', () => {
-  camera.aspect = innerWidth/innerHeight;
+  camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
 
-/* ================= LIGHTS ================= */
-scene.add(new THREE.AmbientLight(0x445577, 0.5));
-const moon = new THREE.DirectionalLight(0x8899ff, 0.9);
-moon.position.set(20, 40, 15);
-moon.castShadow = true;
-moon.shadow.mapSize.set(1024, 1024);
-moon.shadow.camera.left = -32;
-moon.shadow.camera.right = 32;
-moon.shadow.camera.top = 32;
-moon.shadow.camera.bottom = -32;
-scene.add(moon);
+/* ---------- LIGHTS ---------- */
+scene.add(new THREE.AmbientLight(0x445577, 0.8));
+const dirLight = new THREE.DirectionalLight(0x8899ff, 1.4);
+dirLight.position.set(15, 30, 10);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(1024, 1024);
+const S = 22;
+Object.assign(dirLight.shadow.camera, { left: -S, right: S, top: S, bottom: -S });
+scene.add(dirLight);
 
-const playerLight = new THREE.PointLight(0x88ccff, 2.5, 11);
+const playerLight = new THREE.PointLight(0x88ccff, 3, 12);
 scene.add(playerLight);
 
-/* ================= ARENA ================= */
-const ARENA_R = 24;
-
+/* ---------- ARENA ---------- */
+const ARENA = 22;
 const ground = new THREE.Mesh(
-  new THREE.CircleGeometry(ARENA_R, 64),
-  new THREE.MeshStandardMaterial({ color: 0x161020, roughness: 0.9, metalness: 0.05 })
+  new THREE.CircleGeometry(ARENA, 48),
+  new THREE.MeshStandardMaterial({ color: 0x181028, roughness: 0.9 })
 );
-ground.rotation.x = -PI/2;
+ground.rotation.x = -PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-const grid = new THREE.GridHelper(ARENA_R*2, 32, 0x5a3a7a, 0x2a1a3a);
+const grid = new THREE.GridHelper(ARENA * 2, 24, 0x5a3a7a, 0x2a1a3a);
 grid.position.y = 0.02;
-grid.material.opacity = 0.45;
+grid.material.opacity = 0.5;
 grid.material.transparent = true;
 scene.add(grid);
 
-const edge = new THREE.Mesh(
-  new THREE.RingGeometry(ARENA_R-0.25, ARENA_R+0.05, 64),
-  new THREE.MeshBasicMaterial({ color:0x9955dd, side:THREE.DoubleSide, transparent:true, opacity:0.55 })
+const border = new THREE.Mesh(
+  new THREE.RingGeometry(ARENA - 0.2, ARENA + 0.1, 64),
+  new THREE.MeshBasicMaterial({ color: 0xaa66ee, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
 );
-edge.rotation.x = -PI/2;
-edge.position.y = 0.03;
-scene.add(edge);
+border.rotation.x = -PI / 2;
+border.position.y = 0.03;
+scene.add(border);
 
-const torches = [];
-for (let i=0; i<8; i++){
-  const a = (i/8)*TAU;
-  const px = Math.cos(a)*(ARENA_R-2), pz = Math.sin(a)*(ARENA_R-2);
+/* torches */
+for (let i = 0; i < 8; i++){
+  const a = (i / 8) * TAU;
+  const px = Math.cos(a) * (ARENA - 2), pz = Math.sin(a) * (ARENA - 2);
   const pillar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.35, 0.5, 5, 6),
-    new THREE.MeshStandardMaterial({ color:0x1a1228, roughness:0.85 })
+    new THREE.CylinderGeometry(0.35, 0.5, 4, 6),
+    new THREE.MeshStandardMaterial({ color: 0x1a1228, roughness: 0.85 })
   );
-  pillar.position.set(px, 2.5, pz);
+  pillar.position.set(px, 2, pz);
   pillar.castShadow = true;
   scene.add(pillar);
-
-  const flameMat = new THREE.MeshBasicMaterial({
-    color:0xff7733, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending
-  });
-  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.8, 6), flameMat);
-  flame.position.set(px, 5.3, pz);
+  const flame = new THREE.Mesh(
+    new THREE.ConeGeometry(0.28, 0.8, 6),
+    new THREE.MeshBasicMaterial({ color: 0xff7733, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending })
+  );
+  flame.position.set(px, 4.3, pz);
   scene.add(flame);
-  const fl = new THREE.PointLight(0xff6633, 1.2, 8);
-  fl.position.set(px, 5, pz);
+  const fl = new THREE.PointLight(0xff6633, 1.0, 8);
+  fl.position.set(px, 4, pz);
   scene.add(fl);
-  torches.push({ flame, flameMat, light: fl, phase: Math.random()*TAU });
 }
 
-/* ================= PARTICLES ================= */
-const MAX_P = 2500;
+/* ---------- PARTICLES ---------- */
+const MAXP = 1400;
 const pGeo = new THREE.BufferGeometry();
-pGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_P*3), 3));
-pGeo.setAttribute('color',    new THREE.BufferAttribute(new Float32Array(MAX_P*3), 3));
-pGeo.setAttribute('size',     new THREE.BufferAttribute(new Float32Array(MAX_P), 1));
-pGeo.setAttribute('alpha',    new THREE.BufferAttribute(new Float32Array(MAX_P), 1));
+pGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAXP * 3), 3));
+pGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAXP * 3), 3));
+pGeo.setAttribute('size', new THREE.BufferAttribute(new Float32Array(MAXP), 1));
+pGeo.setAttribute('alpha', new THREE.BufferAttribute(new Float32Array(MAXP), 1));
 
 const pMat = new THREE.ShaderMaterial({
   vertexShader: `
@@ -195,7 +189,7 @@ const pMat = new THREE.ShaderMaterial({
     void main(){
       vColor = color; vAlpha = alpha;
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
-      gl_PointSize = size * (320.0 / -mv.z);
+      gl_PointSize = size * (300.0 / -mv.z);
       gl_Position = projectionMatrix * mv;
     }`,
   fragmentShader: `
@@ -203,28 +197,27 @@ const pMat = new THREE.ShaderMaterial({
     void main(){
       vec2 c = gl_PointCoord - 0.5;
       float d = length(c);
-      if(d > 0.5) discard;
+      if (d > 0.5) discard;
       gl_FragColor = vec4(vColor, smoothstep(0.5, 0.0, d) * vAlpha);
     }`,
-  transparent:true, blending:THREE.AdditiveBlending, depthWrite:false
+  transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
 });
 
 const pSystem = new THREE.Points(pGeo, pMat);
 pSystem.frustumCulled = false;
 scene.add(pSystem);
 
-const pData = [];
-for (let i=0; i<MAX_P; i++) pData.push({ alive:false });
+const pData = new Array(MAXP).fill(null).map(() => ({ alive: false }));
 let pIdx = 0;
 
-function spawnP(x,y,z,vx,vy,vz,r,g,b,size,life,grav){
+function emit(x, y, z, vx, vy, vz, r, g, b, size, life, grav){
   const p = pData[pIdx];
   p.alive = true;
-  p.x=x; p.y=y; p.z=z;
-  p.vx=vx; p.vy=vy; p.vz=vz;
-  p.r=r; p.g=g; p.b=b;
-  p.size=size; p.life=life; p.maxLife=life; p.grav=grav||0;
-  pIdx = (pIdx+1) % MAX_P;
+  p.x = x; p.y = y; p.z = z;
+  p.vx = vx; p.vy = vy; p.vz = vz;
+  p.r = r; p.g = g; p.b = b;
+  p.size = size; p.life = life; p.maxLife = life; p.grav = grav || 0;
+  pIdx = (pIdx + 1) % MAXP;
 }
 
 function updateParticles(dt){
@@ -232,19 +225,19 @@ function updateParticles(dt){
   const col = pGeo.attributes.color.array;
   const sz = pGeo.attributes.size.array;
   const al = pGeo.attributes.alpha.array;
-  for (let i=0; i<MAX_P; i++){
+  for (let i = 0; i < MAXP; i++){
     const p = pData[i];
-    if (!p.alive){ sz[i]=0; al[i]=0; continue; }
+    if (!p.alive){ sz[i] = 0; al[i] = 0; continue; }
     p.life -= dt;
-    if (p.life <= 0){ p.alive=false; sz[i]=0; al[i]=0; continue; }
-    p.vy -= p.grav*dt;
-    p.x += p.vx*dt; p.y += p.vy*dt; p.z += p.vz*dt;
-    const damp = Math.exp(-2.2*dt);
+    if (p.life <= 0){ p.alive = false; sz[i] = 0; al[i] = 0; continue; }
+    p.vy -= p.grav * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+    const damp = Math.exp(-2.5 * dt);
     p.vx *= damp; p.vz *= damp;
-    pos[i*3]=p.x; pos[i*3+1]=p.y; pos[i*3+2]=p.z;
-    col[i*3]=p.r; col[i*3+1]=p.g; col[i*3+2]=p.b;
-    const a = p.life/p.maxLife;
-    sz[i] = p.size * (0.3 + a*0.7);
+    pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z;
+    col[i * 3] = p.r; col[i * 3 + 1] = p.g; col[i * 3 + 2] = p.b;
+    const a = p.life / p.maxLife;
+    sz[i] = p.size * (0.3 + a * 0.7);
     al[i] = a;
   }
   pGeo.attributes.position.needsUpdate = true;
@@ -253,305 +246,182 @@ function updateParticles(dt){
   pGeo.attributes.alpha.needsUpdate = true;
 }
 
-/* ================= STYLE COLORS ================= */
+/* ---------- STYLE COLORS ---------- */
 const SC = {
-  water:   { r:0.5,  g:0.85, b:1.0,  r2:0.15, g2:0.55, b2:1.0  },
-  flame:   { r:1.0,  g:0.7,  b:0.2,  r2:1.0,  g2:0.28, b2:0.08 },
-  thunder: { r:1.0,  g:0.95, b:0.4,  r2:1.0,  g2:0.72, b2:0.1  },
-  wind:    { r:0.55, g:1.0,  b:0.8,  r2:0.28, g2:0.9,  b2:0.55 }
+  water:   { r: 0.5, g: 0.85, b: 1.0 },
+  flame:   { r: 1.0, g: 0.6,  b: 0.2 },
+  thunder: { r: 1.0, g: 0.92, b: 0.4 },
+  wind:    { r: 0.5, g: 1.0,  b: 0.75 }
 };
+const hex = st => st === 'water' ? 0x4488ff : st === 'flame' ? 0xff6622 : st === 'thunder' ? 0xffdd22 : 0x44ffaa;
+const css = st => st === 'water' ? '#7fe6ff' : st === 'flame' ? '#ffaa44' : st === 'thunder' ? '#ffee66' : '#66ffaa';
 
 function emitStyle(style, x, y, z, dir, power, count){
   const c = SC[style];
-  for (let i=0; i<count; i++){
-    const ang = dir + rand(-0.9, 0.9);
-    const spd = (0.5+power) * rand(2.5, 6);
-    const vx = Math.sin(ang)*spd, vz = Math.cos(ang)*spd;
+  for (let i = 0; i < count; i++){
+    const ang = dir + rand(-1.0, 1.0);
+    const spd = rand(2, 5) * (0.5 + power);
+    const vx = Math.sin(ang) * spd, vz = Math.cos(ang) * spd;
     let vy, size, life, grav;
-    const hot = Math.random() < 0.5;
-    const cr = hot?c.r:c.r2, cg = hot?c.g:c.g2, cb = hot?c.b:c.b2;
-
-    if (style === 'water'){
-      vy = rand(1, 4.5); size = rand(0.25, 0.55); life = rand(0.5, 0.95); grav = -3;
-    } else if (style === 'flame'){
-      vy = rand(2, 5.5); size = rand(0.35, 0.75); life = rand(0.35, 0.75); grav = -1.5;
-    } else if (style === 'thunder'){
-      vy = rand(-0.5, 2.5); size = rand(0.15, 0.35); life = rand(0.12, 0.3); grav = 3;
-    } else {
-      vy = rand(0.3, 2); size = rand(0.2, 0.4); life = rand(0.28, 0.55); grav = 0.8;
-    }
-
-    spawnP(
-      x + rand(-0.2, 0.2), y + rand(0.3, 1.0), z + rand(-0.2, 0.2),
-      vx, vy, vz, cr, cg, cb, size, life, grav
-    );
+    if (style === 'water'){ vy = rand(1.5, 4); size = rand(0.3, 0.6); life = rand(0.4, 0.8); grav = -2; }
+    else if (style === 'flame'){ vy = rand(2, 4.5); size = rand(0.35, 0.75); life = rand(0.3, 0.7); grav = -1; }
+    else if (style === 'thunder'){ vy = rand(-0.5, 1.5); size = rand(0.15, 0.35); life = rand(0.15, 0.3); grav = 2; }
+    else { vy = rand(0.3, 1.5); size = rand(0.2, 0.4); life = rand(0.25, 0.5); grav = 0.5; }
+    const br = Math.random() < 0.6 ? 1.0 : 0.7;
+    emit(x + rand(-0.3, 0.3), y + rand(0.3, 1.0), z + rand(-0.3, 0.3),
+      vx, vy, vz, c.r * br, c.g * br, c.b * br, size, life, grav);
   }
 }
 
-function spawnBlood(x, y, z, dir){
-  for (let i=0; i<6; i++){
-    const a = dir + rand(-1.2, 1.2);
-    const s = rand(2, 6);
-    spawnP(x, y+0.8, z, Math.sin(a)*s, rand(1, 3), Math.cos(a)*s,
-      1.0, 0.15, 0.3, rand(0.25, 0.5), rand(0.3, 0.6), 6);
-  }
-}
-
-/* ================= PLAYER ================= */
+/* ---------- PLAYER ---------- */
 const playerObj = new THREE.Group();
 scene.add(playerObj);
 
-const bodyMat = new THREE.MeshStandardMaterial({ color:0x1a2535, roughness:0.55, metalness:0.25 });
-const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.7, 4, 8), bodyMat);
-body.position.y = 0.85; body.castShadow = true;
-playerObj.add(body);
-
-const headMat = new THREE.MeshStandardMaterial({ color:0x243040, roughness:0.5 });
-const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), headMat);
-head.position.y = 1.55; head.castShadow = true;
-playerObj.add(head);
-
-const hair = new THREE.Mesh(
-  new THREE.ConeGeometry(0.28, 0.42, 8),
-  new THREE.MeshStandardMaterial({ color:0x0a0a18, roughness:0.9 })
+const bodyMesh = new THREE.Mesh(
+  new THREE.CapsuleGeometry(0.3, 0.7, 4, 8),
+  new THREE.MeshStandardMaterial({ color: 0x1a2535, roughness: 0.5, metalness: 0.3 })
 );
-hair.position.y = 1.82; hair.rotation.x = PI; hair.castShadow = true;
-playerObj.add(hair);
+bodyMesh.position.y = 0.85;
+bodyMesh.castShadow = true;
+playerObj.add(bodyMesh);
 
-const swordGroup = new THREE.Group();
-swordGroup.position.set(0.32, 1.0, 0.15);
-playerObj.add(swordGroup);
+const headMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(0.22, 12, 12),
+  new THREE.MeshStandardMaterial({ color: 0x243040 })
+);
+headMesh.position.y = 1.55;
+headMesh.castShadow = true;
+playerObj.add(headMesh);
+
+const hairMesh = new THREE.Mesh(
+  new THREE.ConeGeometry(0.28, 0.4, 8),
+  new THREE.MeshStandardMaterial({ color: 0x0a0a18, roughness: 0.9 })
+);
+hairMesh.position.y = 1.75; hairMesh.rotation.x = PI; hairMesh.castShadow = true;
+playerObj.add(hairMesh);
+
+const swordPivot = new THREE.Group();
+swordPivot.position.set(0, 1.0, 0);
+playerObj.add(swordPivot);
 
 const handle = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.035, 0.035, 0.28, 8),
-  new THREE.MeshStandardMaterial({ color:0x1a0a04 })
+  new THREE.CylinderGeometry(0.03, 0.03, 0.25, 6),
+  new THREE.MeshStandardMaterial({ color: 0x1a0a04 })
 );
-handle.rotation.z = PI/2;
-swordGroup.add(handle);
-
-const guard = new THREE.Mesh(
-  new THREE.BoxGeometry(0.06, 0.18, 0.03),
-  new THREE.MeshStandardMaterial({ color:0xc8b06a, metalness:0.8, roughness:0.3 })
-);
-guard.position.x = 0.16;
-swordGroup.add(guard);
+handle.rotation.z = PI / 2; handle.position.x = 0.15;
+swordPivot.add(handle);
 
 const bladeMat = new THREE.MeshStandardMaterial({
-  color:0xeaf7ff, emissive:0x88ccff, emissiveIntensity:1.6, metalness:0.9, roughness:0.1
+  color: 0xeaf7ff, emissive: 0x88ccff, emissiveIntensity: 2.0, metalness: 0.9, roughness: 0.1
 });
-const blade = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.04, 0.07), bladeMat);
-blade.position.x = 0.72;
-swordGroup.add(blade);
+const bladeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.06), bladeMat);
+bladeMesh.position.x = 0.75;
+swordPivot.add(bladeMesh);
 
-/* ================= AIM INDICATOR ================= */
-const aimRing = new THREE.Mesh(
-  new THREE.RingGeometry(0.28, 0.4, 24),
-  new THREE.MeshBasicMaterial({ color:0x88ccff, side:THREE.DoubleSide, transparent:true, opacity:0.7 })
+const aimIndicator = new THREE.Mesh(
+  new THREE.RingGeometry(0.25, 0.35, 16),
+  new THREE.MeshBasicMaterial({ color: 0x88ccff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
 );
-aimRing.rotation.x = -PI/2;
-aimRing.position.y = 0.05;
-scene.add(aimRing);
+aimIndicator.rotation.x = -PI / 2;
+aimIndicator.position.y = 0.05;
+scene.add(aimIndicator);
 
-/* ================= PLAYER STATE ================= */
+/* ---------- INPUT ---------- */
+const input = { keys: {}, down: false };
+const pressed = new Set();
+const mouseNDC = new THREE.Vector2();
+
+addEventListener('keydown', e => {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (!input.keys[k]) pressed.add(k);
+  input.keys[k] = true;
+  if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+});
+addEventListener('keyup', e => {
+  input.keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false;
+});
+addEventListener('mousemove', e => {
+  mouseNDC.x = (e.clientX / innerWidth) * 2 - 1;
+  mouseNDC.y = -(e.clientY / innerHeight) * 2 + 1;
+});
+renderer.domElement.addEventListener('mousedown', e => {
+  if (e.button === 0){ input.down = true; pressed.add('click'); }
+  initAudio();
+  e.preventDefault();
+});
+addEventListener('mouseup', e => { if (e.button === 0) input.down = false; });
+addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('wheel', e => {
+  if (state === 'playing') selectForm(player.formIdx + (e.deltaY > 0 ? 1 : -1));
+}, { passive: true });
+
+/* ---------- AUDIO ---------- */
+let actx = null;
+function initAudio(){
+  if (!actx){ try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e){} }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function sfx(freq, dur, type, vol, slideTo){
+  if (!actx) return;
+  const t = actx.currentTime;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol || 0.05, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+function sfxStyle(style){
+  if (style === 'water') sfx(520, 0.12, 'sine', 0.05, 980);
+  else if (style === 'flame') sfx(180, 0.18, 'sawtooth', 0.06, 80);
+  else if (style === 'thunder') sfx(1200, 0.06, 'square', 0.04, 300);
+  else sfx(680, 0.1, 'sine', 0.04, 1500);
+}
+
+/* ---------- STATE ---------- */
+let state = 'title';
+let gameTime = 0, shake = 0, flashAlpha = 0;
+let wave = 0, waveTimer = 1.5, waveState = 'idle';
+let score = 0, kills = 0;
+let demons = [], slashes = [], rings = [], projectiles = [], bolts = [], scheduled = [];
 let player = null;
+const STYLE_ORDER = ['water', 'flame', 'thunder', 'wind'];
 
-function resetPlayer(){
+function resetGame(){
+  for (const d of demons) scene.remove(d.mesh);
+  for (const s of slashes) scene.remove(s.mesh);
+  for (const r of rings) scene.remove(r.mesh);
+  for (const pr of projectiles) scene.remove(pr.mesh);
+  for (const b of bolts) scene.remove(b.line);
+  demons = []; slashes = []; rings = []; projectiles = []; bolts = []; scheduled = [];
+
   player = {
-    x:0, z:0, vx:0, vz:0,
-    hp:100, maxHp:100,
-    stamina:100, maxStamina:100, stamDelay:0,
-    breathing:0,
-    aim:0,
-    atkCd:0, dashT:0, dashCd:0, dashDir:0,
-    invuln:0, hurtFlash:0, ultLock:0,
-    style:'water', formIdx:0,
-    chain:0, chainT:0, swingT:0
+    x: 0, z: 0, vx: 0, vz: 0,
+    hp: 100, maxHp: 100,
+    stamina: 100, maxStamina: 100, stamDelay: 0,
+    breathing: 0, aim: 0,
+    atkCd: 0, dashT: 0, dashCd: 0, dashDir: 0,
+    invuln: 0, ultLock: 0, swingT: 0,
+    style: 'water', formIdx: 0,
+    chain: 0, chainT: 0
   };
+  wave = 0; waveState = 'idle'; waveTimer = 1.5;
+  score = 0; kills = 0;
+  shake = 0; flashAlpha = 0; gameTime = 0;
 }
 
-/* ================= DEMONS ================= */
-let demons = [];
-
-const TYPES = {
-  grunt: { r:0.55, hp:40,  speed:5.5, dmg:9,  color:0x6a2a8a, score:100 },
-  swift: { r:0.42, hp:26,  speed:9,   dmg:6,  color:0xb03a6a, score:130 },
-  brute: { r:0.9,  hp:155, speed:3.8, dmg:18, color:0x8a2a2a, score:260 },
-  boss:  { r:1.5,  hp:700, speed:4.4, dmg:26, color:0xc8183a, score:1200 }
-};
-
-function createDemonMesh(type){
-  const t = TYPES[type];
-  const g = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({
-    color: t.color, emissive: new THREE.Color(t.color).multiplyScalar(0.15),
-    roughness: 0.55, metalness: 0.2
-  });
-  mat.userData.baseColor = new THREE.Color(t.color);
-  mat.userData.baseEmissive = mat.emissive.clone();
-
-  if (type === 'boss'){
-    const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.9, 1.5, 4, 10), mat);
-    b.position.y = 2.2; b.castShadow = true; g.add(b);
-    for (let i of [-1, 1]){
-      const horn = new THREE.Mesh(
-        new THREE.ConeGeometry(0.15, 0.8, 6),
-        new THREE.MeshStandardMaterial({ color:0x150005 })
-      );
-      horn.position.set(i*0.4, 3.4, 0);
-      g.add(horn);
-      const eye = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 8, 8),
-        new THREE.MeshBasicMaterial({ color:0xffdd44 })
-      );
-      eye.position.set(i*0.3, 2.9, 0.65);
-      g.add(eye);
-    }
-  } else if (type === 'brute'){
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 12), mat);
-    b.position.y = 1.1; b.scale.y = 1.35; b.castShadow = true; g.add(b);
-    for (let i of [-1, 1]){
-      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.7, 4, 6), mat);
-      arm.position.set(i*0.85, 1.0, 0);
-      arm.rotation.z = i*0.35;
-      arm.castShadow = true;
-      g.add(arm);
-    }
-  } else if (type === 'swift'){
-    const b = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.4, 6), mat);
-    b.position.y = 0.7; b.castShadow = true; g.add(b);
-  } else {
-    const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 0.7, 4, 8), mat);
-    b.position.y = 0.9; b.castShadow = true; g.add(b);
-    for (let i of [-1, 1]){
-      const eye = new THREE.Mesh(
-        new THREE.SphereGeometry(0.07, 6, 6),
-        new THREE.MeshBasicMaterial({ color:0xff3344 })
-      );
-      eye.position.set(i*0.15, 1.15, 0.32);
-      g.add(eye);
-    }
-  }
-
-  g.userData.mat = mat;
-  return g;
-}
-
-function makeDemon(type, x, z){
-  const t = TYPES[type];
-  const hpScale = 1 + (wave-1)*0.14;
-  const spScale = 1 + Math.min(wave-1, 12)*0.025;
-  const mesh = createDemonMesh(type);
-  mesh.position.set(x, 0, z);
-  scene.add(mesh);
-  return {
-    type, x, z, vx:0, vz:0, r:t.r,
-    hp:t.hp*hpScale, maxHp:t.hp*hpScale,
-    speed:t.speed*spScale, dmg:t.dmg,
-    score:t.score, seed:rand(0, 100),
-    hitFlash:0, stun:0, atkCd:0,
-    chargeCd:2.5, windup:0, charging:0,
-    cdx:0, cdz:0, mesh, dead:false
-  };
-}
-
-/* ================= EFFECTS POOLS ================= */
-const slashes = [];
-const rings = [];
-const projectiles = [];
-const bolts = [];
-const telegraphs = [];
-const scheduled = [];
-
-function spawnSlashArc(px, pz, dir, range, arc, style){
-  const c = SC[style];
-  const seg = 20;
-  const positions = [], indices = [];
-  for (let i=0; i<=seg; i++){
-    const t = i/seg;
-    const a = dir - arc/2 + arc*t;
-    const s = Math.sin(a), co = Math.cos(a);
-    positions.push(px + s*range, 1.0, pz + co*range);
-    positions.push(px + s*range*0.45, 1.35, pz + co*range*0.45);
-  }
-  for (let i=0; i<seg; i++){
-    const b = i*2;
-    indices.push(b, b+2, b+1, b+1, b+2, b+3);
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setIndex(indices);
-  geo.computeVertexNormals();
-  const mat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(c.r, c.g, c.b),
-    transparent:true, opacity:0.85, side:THREE.DoubleSide,
-    blending:THREE.AdditiveBlending, depthWrite:false
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  scene.add(mesh);
-  slashes.push({ mesh, mat, life:0.28, max:0.28 });
-}
-
-function spawnRingFx(px, pz, radius, style){
-  const c = SC[style];
-  const geo = new THREE.RingGeometry(radius-0.35, radius, 40);
-  const mat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(c.r, c.g, c.b),
-    transparent:true, opacity:0.9, side:THREE.DoubleSide,
-    blending:THREE.AdditiveBlending, depthWrite:false
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.rotation.x = -PI/2;
-  mesh.position.set(px, 0.1, pz);
-  scene.add(mesh);
-  rings.push({ mesh, mat, life:0.45, max:0.45 });
-}
-
-function spawnProjectile(px, pz, dir, style, speed, dmg, r, life){
-  const c = SC[style];
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(r*0.5, 12, 12),
-    new THREE.MeshBasicMaterial({ color:new THREE.Color(c.r, c.g, c.b),
-      blending:THREE.AdditiveBlending, transparent:true, opacity:0.95 })
-  );
-  mesh.position.set(px, 1.2, pz);
-  scene.add(mesh);
-  projectiles.push({
-    mesh, x:px, z:pz, y:1.2, vx:Math.sin(dir)*speed, vz:Math.cos(dir)*speed,
-    dir, r, dmg, style, life, maxLife:life, hit:new Set()
-  });
-}
-
-function spawnBolt(x1, z1, x2, z2, style, jag, life){
-  const c = SC[style];
-  const pts = [];
-  const n = 10;
-  for (let i=0; i<=n; i++){
-    const t = i/n, j = i===n?0:jag;
-    pts.push(new THREE.Vector3(
-      lerp(x1, x2, t) + rand(-j, j),
-      1.2 + rand(-j*0.3, j*0.3),
-      lerp(z1, z2, t) + rand(-j, j)
-    ));
-  }
-  const geo = new THREE.BufferGeometry().setFromPoints(pts);
-  const mat = new THREE.LineBasicMaterial({
-    color: new THREE.Color(c.r, c.g, c.b), transparent:true, opacity:1,
-    blending:THREE.AdditiveBlending, linewidth:2
-  });
-  const line = new THREE.Line(geo, mat);
-  scene.add(line);
-  bolts.push({ line, mat, life, max:life });
-}
-
-/* ================= FORM HELPERS ================= */
+/* ---------- DAMAGE HELPERS ---------- */
 function demonsInArc(px, pz, dir, range, arc){
   const out = [];
   for (const d of demons){
     if (d.dead) continue;
-    const dx = d.x-px, dz = d.z-pz;
+    const dx = d.x - px, dz = d.z - pz;
     const dist = Math.hypot(dx, dz);
     if (dist > range + d.r) continue;
-    if (Math.abs(angDiff(Math.atan2(dx, dz), dir)) < arc/2) out.push(d);
+    if (Math.abs(angDiff(Math.atan2(dx, dz), dir)) < arc / 2) out.push(d);
   }
   return out;
 }
@@ -559,37 +429,41 @@ function demonsInRadius(px, pz, radius){
   const out = [];
   for (const d of demons){
     if (d.dead) continue;
-    if (Math.hypot(d.x-px, d.z-pz) < radius + d.r) out.push(d);
+    if (Math.hypot(d.x - px, d.z - pz) < radius + d.r) out.push(d);
   }
   return out;
 }
-function demonsInLine(px, pz, dir, length, width){
+function demonsInLine(px, pz, dir, len, width){
   const ux = Math.sin(dir), uz = Math.cos(dir);
   const out = [];
   for (const d of demons){
     if (d.dead) continue;
-    const dx = d.x-px, dz = d.z-pz;
-    const t = dx*ux + dz*uz;
-    if (t < -d.r || t > length + d.r) continue;
-    const perpX = dx - ux*t, perpZ = dz - uz*t;
-    if (Math.hypot(perpX, perpZ) < width/2 + d.r) out.push(d);
+    const dx = d.x - px, dz = d.z - pz;
+    const t = dx * ux + dz * uz;
+    if (t < -d.r || t > len + d.r) continue;
+    const perpX = dx - ux * t, perpZ = dz - uz * t;
+    if (Math.hypot(perpX, perpZ) < width / 2 + d.r) out.push(d);
   }
   return out;
 }
 
-/* ================= DAMAGE ================= */
 function damageDemon(d, dmg, dir, knock){
   if (d.dead) return;
   d.hp -= dmg;
   d.hitFlash = 1;
   d.stun = Math.max(d.stun, 0.1);
-  const k = (knock||1) * (d.type==='boss'?0.25:d.type==='brute'?0.5:1);
-  d.vx += Math.sin(dir)*4*k;
-  d.vz += Math.cos(dir)*4*k;
-  player.breathing = Math.min(100, player.breathing + dmg*0.16);
+  const k = (knock || 1) * (d.type === 'boss' ? 0.25 : d.type === 'brute' ? 0.5 : 1);
+  d.vx += Math.sin(dir) * 4 * k;
+  d.vz += Math.cos(dir) * 4 * k;
+  player.breathing = Math.min(100, player.breathing + dmg * 0.16);
   player.chain++;
   player.chainT = 1.1;
-  spawnBlood(d.x, 0.5, d.z, dir);
+  for (let i = 0; i < 5; i++){
+    const a = dir + rand(-1.2, 1.2);
+    const s = rand(2, 5);
+    emit(d.x, 0.8, d.z, Math.sin(a) * s, rand(0.5, 2.5), Math.cos(a) * s,
+      1, 0.15, 0.3, rand(0.2, 0.4), rand(0.3, 0.5), 4);
+  }
   if (d.hp <= 0) killDemon(d);
 }
 
@@ -597,46 +471,99 @@ function killDemon(d){
   d.dead = true;
   kills++;
   score += d.score;
-  const c = SC[player.style];
-  const n = d.type==='boss'?55:20;
-  for (let i=0; i<n; i++){
-    const a = Math.random()*TAU, s = rand(2, 8);
-    spawnP(d.x, rand(0.4, 2), d.z, Math.sin(a)*s, rand(0.5, 4), Math.cos(a)*s,
-      1, 0.2, 0.35, rand(0.25, 0.6), rand(0.3, 0.9), 3);
-  }
-  if (d.type === 'boss'){
-    shake = 22; hitStop = 0.13;
-    spawnRingFx(d.x, d.z, 3, 'water');
-    spawnRingFx(d.x, d.z, 6, 'water');
-    sfx(110, 0.9, 'sawtooth', 0.13, 40);
-  } else {
-    hitStop = Math.max(hitStop, 0.035);
-    sfx(280, 0.14, 'triangle', 0.05, 90);
+  const n = d.type === 'boss' ? 40 : 15;
+  for (let i = 0; i < n; i++){
+    const a = Math.random() * TAU, s = rand(2, 7);
+    emit(d.x, rand(0.4, 2), d.z, Math.sin(a) * s, rand(0.5, 4), Math.cos(a) * s,
+      1, 0.2, 0.35, rand(0.2, 0.5), rand(0.4, 0.9), 2);
   }
   scene.remove(d.mesh);
+  if (d.type === 'boss'){ shake = 20; sfx(100, 0.8, 'sawtooth', 0.1, 40); }
+  else sfx(280, 0.12, 'triangle', 0.04, 90);
 }
 
-/* ================= STYLES / FORMS ================= */
+/* ---------- FORM ARCHETYPES ---------- */
+function spawnArcFx(px, pz, dir, range, arc, style){
+  const c = SC[style];
+  const seg = 24;
+  const positions = [px, 0.3, pz];
+  const indices = [];
+  for (let i = 0; i <= seg; i++){
+    const a = dir - arc / 2 + arc * (i / seg);
+    positions.push(px + Math.sin(a) * range, 0.3, pz + Math.cos(a) * range);
+    if (i > 0) indices.push(0, i, i + 1);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  const mat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(c.r, c.g, c.b),
+    transparent: true, opacity: 0.75, side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+  slashes.push({ mesh, mat, life: 0.25, max: 0.25 });
+}
+
+function spawnRingFx(px, pz, radius, style){
+  const c = SC[style];
+  const geo = new THREE.RingGeometry(Math.max(0.1, radius - 0.35), radius, 32);
+  const mat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(c.r, c.g, c.b),
+    transparent: true, opacity: 0.85, side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -PI / 2;
+  mesh.position.set(px, 0.1, pz);
+  scene.add(mesh);
+  rings.push({ mesh, mat, life: 0.4, max: 0.4 });
+}
+
+function spawnBoltFx(x1, z1, x2, z2, jag, life){
+  const c = SC[player.style];
+  const pts = [];
+  const n = 8;
+  for (let i = 0; i <= n; i++){
+    const t = i / n, j = i === n ? 0 : jag;
+    pts.push(new THREE.Vector3(
+      lerp(x1, x2, t) + rand(-j, j),
+      1.0 + rand(-0.2, 0.2),
+      lerp(z1, z2, t) + rand(-j, j)
+    ));
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({
+    color: new THREE.Color(c.r, c.g, c.b),
+    transparent: true, opacity: 1, blending: THREE.AdditiveBlending
+  });
+  const line = new THREE.Line(geo, mat);
+  scene.add(line);
+  bolts.push({ line, mat, life, max: life });
+}
+
 function formArc(p, o){
   const dir = p.aim;
   const hits = o.hits || 1, spread = o.spread || 0;
   const arc = o.arc || PI, range = o.range || 4.5;
-  for (let i=0; i<hits; i++){
-    const a = dir + (hits>1 ? (i-(hits-1)/2)*spread : 0);
-    spawnSlashArc(p.x, p.z, a, range, arc, p.style);
-    for (let k=0; k<16; k++){
-      const t = k/16;
-      const aa = a - arc/2 + arc*t;
-      const rr = range * rand(0.5, 0.95);
-      emitStyle(p.style, p.x + Math.sin(aa)*rr, 0.9, p.z + Math.cos(aa)*rr, a, 0.5, 1);
+  for (let i = 0; i < hits; i++){
+    const a = dir + (hits > 1 ? (i - (hits - 1) / 2) * spread : 0);
+    spawnArcFx(p.x, p.z, a, range, arc, p.style);
+    for (let k = 0; k < 10; k++){
+      const t = k / 10;
+      const aa = a - arc / 2 + arc * t;
+      const rr = range * rand(0.5, 1.0);
+      emitStyle(p.style, p.x + Math.sin(aa) * rr, 0.8, p.z + Math.cos(aa) * rr, a, 0.5, 1);
     }
-    for (const d of demonsInArc(p.x, p.z, a, range, arc)) damageDemon(d, o.dmg, a, o.knock||1);
-    if (p.style==='thunder' && Math.random()<0.6)
-      spawnBolt(p.x, p.z, p.x+Math.sin(a)*range, p.z+Math.cos(a)*range, 'thunder', 0.6, 0.16);
+    for (const d of demonsInArc(p.x, p.z, a, range, arc)) damageDemon(d, o.dmg, a, o.knock || 1);
+    if (p.style === 'thunder' && Math.random() < 0.5){
+      spawnBoltFx(p.x, p.z, p.x + Math.sin(a) * range, p.z + Math.cos(a) * range, 0.5, 0.15);
+    }
   }
   const lunge = o.lunge !== undefined ? o.lunge : 2;
-  p.vx += Math.sin(dir)*lunge;
-  p.vz += Math.cos(dir)*lunge;
+  p.vx += Math.sin(dir) * lunge;
+  p.vz += Math.cos(dir) * lunge;
   shake = Math.max(shake, o.shake || 3);
   sfxStyle(p.style);
 }
@@ -644,30 +571,29 @@ function formArc(p, o){
 function formRing(p, o){
   const radius = o.radius || 4.5;
   if (o.pull){
-    for (const d of demonsInRadius(p.x, p.z, radius*1.5)){
+    for (const d of demonsInRadius(p.x, p.z, radius * 1.5)){
       if (d.type === 'boss') continue;
-      const a = Math.atan2(p.x-d.x, p.z-d.z);
-      d.vx += Math.sin(a)*4.5;
-      d.vz += Math.cos(a)*4.5;
+      const a = Math.atan2(p.x - d.x, p.z - d.z);
+      d.vx += Math.sin(a) * 4;
+      d.vz += Math.cos(a) * 4;
     }
-    emitStyle(p.style, p.x, 1, p.z, 0, 0.8, 12);
   }
   for (const d of demonsInRadius(p.x, p.z, radius)){
-    const a = Math.atan2(d.x-p.x, d.z-p.z);
-    damageDemon(d, o.dmg, a, o.knock||1.2);
+    const a = Math.atan2(d.x - p.x, d.z - p.z);
+    damageDemon(d, o.dmg, a, o.knock || 1.2);
   }
   spawnRingFx(p.x, p.z, radius, p.style);
-  for (let k=0; k<12; k++){
-    const a = Math.random()*TAU;
-    emitStyle(p.style, p.x+Math.sin(a)*radius*0.85, 0.9, p.z+Math.cos(a)*radius*0.85, a, 0.4, 1);
+  for (let k = 0; k < 10; k++){
+    const a = Math.random() * TAU;
+    emitStyle(p.style, p.x + Math.sin(a) * radius * 0.85, 0.9, p.z + Math.cos(a) * radius * 0.85, a, 0.4, 1);
   }
   if (p.style === 'thunder'){
-    for (let k=0; k<5; k++){
-      const a = Math.random()*TAU;
-      spawnBolt(p.x, p.z, p.x+Math.sin(a)*radius, p.z+Math.cos(a)*radius, 'thunder', 0.8, 0.2);
+    for (let k = 0; k < 4; k++){
+      const a = Math.random() * TAU;
+      spawnBoltFx(p.x, p.z, p.x + Math.sin(a) * radius, p.z + Math.cos(a) * radius, 0.7, 0.18);
     }
   }
-  shake = Math.max(shake, o.shake || 6);
+  shake = Math.max(shake, o.shake || 5);
   sfxStyle(p.style);
 }
 
@@ -676,24 +602,22 @@ function formDash(p, o){
   const dist = o.dist || 8, width = o.width || 2;
   const ux = Math.sin(dir), uz = Math.cos(dir);
   const x1 = p.x, z1 = p.z;
-  const x2 = x1 + ux*dist, z2 = z1 + uz*dist;
+  const x2 = x1 + ux * dist, z2 = z1 + uz * dist;
   for (const d of demons){
     if (d.dead) continue;
-    const t = clamp(((d.x-x1)*ux + (d.z-z1)*uz) / dist, 0, 1);
-    const cx = x1 + ux*dist*t, cz = z1 + uz*dist*t;
-    if (Math.hypot(d.x-cx, d.z-cz) < width/2 + d.r) damageDemon(d, o.dmg, dir, o.knock||1.2);
+    const t = clamp(((d.x - x1) * ux + (d.z - z1) * uz) / dist, 0, 1);
+    const cx = x1 + ux * dist * t, cz = z1 + uz * dist * t;
+    if (Math.hypot(d.x - cx, d.z - cz) < width / 2 + d.r) damageDemon(d, o.dmg, dir, o.knock || 1.2);
   }
-  for (let i=0; i<=10; i++){
-    const t = i/10;
-    emitStyle(p.style, lerp(x1, x2, t), 1, lerp(z1, z2, t), dir, 0.6, 2);
+  for (let i = 0; i <= 10; i++){
+    const t = i / 10;
+    emitStyle(p.style, lerp(x1, x2, t), 0.9, lerp(z1, z2, t), dir, 0.6, 2);
   }
-  spawnSlashArc(x1, z1, dir, dist*0.75, PI*0.55, p.style);
-  if (p.style === 'thunder') spawnBolt(x1, z1, x2, z2, 'thunder', 1.2, 0.22);
-
+  if (p.style === 'thunder') spawnBoltFx(x1, z1, x2, z2, 1.0, 0.22);
   p.dashDir = dir;
-  p.dashT = dist/22;
+  p.dashT = dist / 22;
   p.invuln = Math.max(p.invuln, o.iframes || 0.18);
-  shake = Math.max(shake, o.shake || 6);
+  shake = Math.max(shake, o.shake || 5);
   sfxStyle(p.style);
 }
 
@@ -702,27 +626,25 @@ function formLine(p, o){
   const len = o.len || 7, width = o.width || 1.4;
   const ux = Math.sin(dir), uz = Math.cos(dir);
   const x1 = p.x, z1 = p.z;
-  for (const d of demonsInLine(x1, z1, dir, len, width)) damageDemon(d, o.dmg, dir, o.knock||1.5);
-  for (let i=0; i<=10; i++){
-    const t = i/10;
-    emitStyle(p.style, x1+ux*len*t, 1, z1+uz*len*t, dir, 0.45, 2);
+  for (const d of demonsInLine(x1, z1, dir, len, width)) damageDemon(d, o.dmg, dir, o.knock || 1.5);
+  for (let i = 0; i <= 10; i++){
+    const t = i / 10;
+    emitStyle(p.style, x1 + ux * len * t, 0.9, z1 + uz * len * t, dir, 0.45, 2);
   }
-  spawnSlashArc(x1, z1, dir, len, 0.35, p.style);
-  p.vx += ux*3; p.vz += uz*3;
+  p.vx += ux * 3; p.vz += uz * 3;
   shake = Math.max(shake, 4);
   sfxStyle(p.style);
 }
 
 function formMulti(p, o){
   const ticks = o.ticks || 5, interval = o.interval || 0.1;
-  for (let i=0; i<ticks; i++){
-    scheduled.push({ t: i*interval, fn: () => {
-      const list = demonsInRadius(p.x, p.z, o.radius);
-      for (const d of list) damageDemon(d, o.dmg, Math.atan2(d.x-p.x, d.z-p.z), o.knock||1.2);
+  for (let i = 0; i < ticks; i++){
+    scheduled.push({ t: i * interval, fn: () => {
+      for (const d of demonsInRadius(p.x, p.z, o.radius)) damageDemon(d, o.dmg, Math.atan2(d.x - p.x, d.z - p.z), o.knock || 1.2);
       spawnRingFx(p.x, p.z, o.radius, p.style);
-      for (let k=0; k<10; k++){
-        const a = Math.random()*TAU;
-        emitStyle(p.style, p.x+Math.sin(a)*o.radius*0.8, 0.9, p.z+Math.cos(a)*o.radius*0.8, a, 0.4, 2);
+      for (let k = 0; k < 8; k++){
+        const a = Math.random() * TAU;
+        emitStyle(p.style, p.x + Math.sin(a) * o.radius * 0.8, 0.9, p.z + Math.cos(a) * o.radius * 0.8, a, 0.4, 2);
       }
       shake = Math.max(shake, 4);
       sfxStyle(p.style);
@@ -731,11 +653,28 @@ function formMulti(p, o){
 }
 
 function formProj(p, o){
-  spawnProjectile(p.x, p.z, p.aim, p.style, o.speed || 22, o.dmg, o.r || 1.0, o.life || 1.2);
-  p.vx -= Math.sin(p.aim)*2;
-  p.vz -= Math.cos(p.aim)*2;
-  emitStyle(p.style, p.x+Math.sin(p.aim)*0.8, 1, p.z+Math.cos(p.aim)*0.8, p.aim, 0.7, 8);
-  shake = Math.max(shake, 5);
+  const dir = p.aim;
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(o.r * 0.4, 12, 12),
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color(SC[p.style].r, SC[p.style].g, SC[p.style].b),
+      blending: THREE.AdditiveBlending, transparent: true, opacity: 0.95
+    })
+  );
+  mesh.position.set(p.x, 1.1, p.z);
+  scene.add(mesh);
+  projectiles.push({
+    mesh, x: p.x, z: p.z, y: 1.1,
+    vx: Math.sin(dir) * (o.speed || 22),
+    vz: Math.cos(dir) * (o.speed || 22),
+    r: o.r, dmg: o.dmg, style: p.style,
+    life: o.life || 1.2, maxLife: o.life || 1.2,
+    hit: new Set()
+  });
+  p.vx -= Math.sin(dir) * 1.5;
+  p.vz -= Math.cos(dir) * 1.5;
+  emitStyle(p.style, p.x + Math.sin(dir) * 0.8, 1, p.z + Math.cos(dir) * 0.8, dir, 0.7, 8);
+  shake = Math.max(shake, 4);
   sfxStyle(p.style);
 }
 
@@ -746,61 +685,72 @@ const Ln = o => p => formLine(p, o);
 const Mu = o => p => formMulti(p, o);
 const Pr = o => p => formProj(p, o);
 
-/* ================= BREATHING STYLES ================= */
+/* ---------- STYLES (canon forms) ---------- */
 const STYLES = {
   water: {
-    key:'water', name:'WATER', kanji:'水',
+    key: 'water', name: 'WATER', kanji: '水',
     forms: [
-      { name:'Water Surface Slash', cost:10, cd:0.18, run: A({ dmg:22, range:4.5, arc:1.35*PI, knock:1.1, lunge:2.5 }) },
-      { name:'Water Wheel',         cost:16, cd:0.45, run: R({ dmg:26, radius:4,  knock:1.4 }) },
-      { name:'Flowing Dance',       cost:20, cd:0.60, run: Dh({ dmg:42, dist:9,  width:2.2, iframes:0.22, knock:1.2 }) },
-      { name:'Striking Tide',       cost:22, cd:0.55, run: A({ dmg:14, range:5, arc:1.15*PI, hits:3, spread:0.55, knock:1 }) },
-      { name:'Blessed Rain After the Drought', cost:26, cd:0.80, run: Ln({ dmg:60, len:7, width:1.5, knock:2.2 }) },
-      { name:'Whirlpool',           cost:28, cd:0.85, run: R({ dmg:34, radius:5.5, knock:1.6, pull:true }) },
-      { name:'Drop Ripple Thrust',  cost:18, cd:0.50, run: Ln({ dmg:44, len:9, width:0.9, knock:1.4 }) },
-      { name:'Waterfall Basin',     cost:30, cd:0.90, run: A({ dmg:48, range:6, arc:0.95*PI, knock:2.4, heavy:true }) },
-      { name:'Splashing Water Flow',cost:22, cd:0.70, run: Dh({ dmg:30, dist:11, width:2, iframes:0.34, knock:1.3 }) },
-      { name:'Constant Flux',       cost:40, cd:1.20, run: Mu({ dmg:15, ticks:6, interval:0.10, radius:4.5, knock:1.3 }) }
+      { name: 'Water Surface Slash', cost: 10, cd: 0.18, run: A({ dmg: 22, range: 4.5, arc: 1.35 * PI, knock: 1.1, lunge: 2.5 }) },
+      { name: 'Water Wheel', cost: 16, cd: 0.45, run: R({ dmg: 26, radius: 4, knock: 1.4 }) },
+      { name: 'Flowing Dance', cost: 20, cd: 0.60, run: Dh({ dmg: 42, dist: 9, width: 2.2, iframes: 0.22, knock: 1.2 }) },
+      { name: 'Striking Tide', cost: 22, cd: 0.55, run: A({ dmg: 14, range: 5, arc: 1.15 * PI, hits: 3, spread: 0.55, knock: 1 }) },
+      { name: 'Blessed Rain After the Drought', cost: 26, cd: 0.80, run: Ln({ dmg: 60, len: 7, width: 1.5, knock: 2.2 }) },
+      { name: 'Whirlpool', cost: 28, cd: 0.85, run: R({ dmg: 34, radius: 5.5, knock: 1.6, pull: true }) },
+      { name: 'Drop Ripple Thrust', cost: 18, cd: 0.50, run: Ln({ dmg: 44, len: 9, width: 0.9, knock: 1.4 }) },
+      { name: 'Waterfall Basin', cost: 30, cd: 0.90, run: A({ dmg: 48, range: 6, arc: 0.95 * PI, knock: 2.4 }) },
+      { name: 'Splashing Water Flow', cost: 22, cd: 0.70, run: Dh({ dmg: 30, dist: 11, width: 2, iframes: 0.34, knock: 1.3 }) },
+      { name: 'Constant Flux', cost: 40, cd: 1.20, run: Mu({ dmg: 15, ticks: 6, interval: 0.10, radius: 4.5, knock: 1.3 }) }
     ],
-    ult: { name:'Dead Calm', num:'11th Form', run: p => {
+    ult: { name: 'Dead Calm', num: '11th Form', run: p => {
       p.invuln = Math.max(p.invuln, 0.7);
-      for (const d of demonsInRadius(p.x, p.z, 9)) damageDemon(d, 100, Math.atan2(d.x-p.x, d.z-p.z), 3);
-      for (let i=0; i<3; i++){
-        scheduled.push({ t: i*0.1, fn: () => {
-          spawnRingFx(p.x, p.z, 5 + i*2, 'water');
-          spawnRingFx(p.x, p.z, 3 + i*2, 'water');
-        }});
+      for (const d of demonsInRadius(p.x, p.z, 9)) damageDemon(d, 100, Math.atan2(d.x - p.x, d.z - p.z), 3);
+      for (let i = 0; i < 60; i++){
+        const a = Math.random() * TAU, s = rand(3, 10);
+        emit(p.x, rand(0.5, 2), p.z, Math.sin(a) * s, rand(0.5, 4), Math.cos(a) * s,
+          0.5, 0.9, 1, rand(0.3, 0.7), rand(0.5, 1.1), -2);
       }
-      for (let i=0; i<60; i++){
-        const a = Math.random()*TAU, s = rand(3, 12);
-        spawnP(p.x, rand(0.5, 2), p.z, Math.sin(a)*s, rand(0.5, 5), Math.cos(a)*s,
-          0.55, 0.9, 1, rand(0.3, 0.7), rand(0.5, 1.1), -2);
-      }
-      shake = 20; hitStop = 0.1; flashAlpha = 0.24;
-      sfx(300, 0.7, 'sine', 0.1, 900); sfxNoise(0.6, 0.1, 1200);
+      spawnRingFx(p.x, p.z, 8, 'water');
+      shake = 20; sfx(300, 0.7, 'sine', 0.1, 900);
     }}
   },
-
   flame: {
-    key:'flame', name:'FLAME', kanji:'炎',
+    key: 'flame', name: 'FLAME', kanji: '炎',
     forms: [
-      { name:'Unknowing Fire',            cost:14, cd:0.40, run: Dh({ dmg:38, dist:8,  width:2.6, iframes:0.16, knock:1.5 }) },
-      { name:'Rising Scorching Sun',      cost:16, cd:0.40, run: A({ dmg:34, range:4.5, arc:0.85*PI, knock:2.3, heavy:true }) },
-      { name:'Blazing Universe',          cost:22, cd:0.55, run: A({ dmg:40, range:5,   arc:1.55*PI, knock:1.5 }) },
-      { name:'Blooming Flame Undulation', cost:26, cd:0.70, run: R({ dmg:38, radius:4.5, knock:1.6 }) },
-      { name:'Flame Tiger',               cost:30, cd:0.90, run: Pr({ dmg:52, speed:22, r:1.2, life:1.2 }) }
+      { name: 'Unknowing Fire', cost: 14, cd: 0.40, run: Dh({ dmg: 38, dist: 8, width: 2.6, iframes: 0.16, knock: 1.5 }) },
+      { name: 'Rising Scorching Sun', cost: 16, cd: 0.40, run: A({ dmg: 34, range: 4.5, arc: 0.85 * PI, knock: 2.3 }) },
+      { name: 'Blazing Universe', cost: 22, cd: 0.55, run: A({ dmg: 40, range: 5, arc: 1.55 * PI, knock: 1.5 }) },
+      { name: 'Blooming Flame Undulation', cost: 26, cd: 0.70, run: R({ dmg: 38, radius: 4.5, knock: 1.6 }) },
+      { name: 'Flame Tiger', cost: 30, cd: 0.90, run: Pr({ dmg: 52, speed: 22, r: 1.2, life: 1.2 }) }
     ],
-    ult: { name:'Rengoku', num:'9th Form', run: p => {
+    ult: { name: 'Rengoku', num: '9th Form', run: p => {
       const dir = p.aim;
-      for (let i=0; i<5; i++){
-        scheduled.push({ t: i*0.07, fn: () => {
-          for (const d of demonsInArc(p.x, p.z, dir, 12, 1.25*PI)) damageDemon(d, 34, dir, 2.5);
-          for (let k=0; k<20; k++){
-            const t = k/20, a = dir - 0.6 + 1.2*t, r = rand(3, 11);
-            emitStyle('flame', p.x+Math.sin(a)*r, 1, p.z+Math.cos(a)*r, dir, 1, 1);
+      for (let i = 0; i < 5; i++){
+        scheduled.push({ t: i * 0.07, fn: () => {
+          for (const d of demonsInArc(p.x, p.z, dir, 12, 1.25 * PI)) damageDemon(d, 34, dir, 2.5);
+          for (let k = 0; k < 15; k++){
+            const t = k / 15, a = dir - 0.6 + 1.2 * t, r = rand(3, 11);
+            emitStyle('flame', p.x + Math.sin(a) * r, 1, p.z + Math.cos(a) * r, dir, 1, 1);
           }
         }});
       }
-      spawnRingFx(p.x, p.z, 12, 'flame');
-      p.vx += Math.sin(dir)*8; p.vz += Math.cos(dir)*8;
-      p.invuln = Math.max(p.invul
+      spawnRingFx(p.x, p.z, 10, 'flame');
+      p.vx += Math.sin(dir) * 6;
+      p.vz += Math.cos(dir) * 6;
+      p.invuln = Math.max(p.invuln, 0.55);
+      shake = 22; sfx(110, 0.9, 'sawtooth', 0.12, 40);
+    }}
+  },
+  thunder: {
+    key: 'thunder', name: 'THUNDER', kanji: '雷',
+    forms: [
+      { name: 'Thunderclap and Flash', cost: 12, cd: 0.42, run: Dh({ dmg: 40, dist: 11, width: 1.8, iframes: 0.20, knock: 1.4 }) },
+      { name: 'Rice Spirit', cost: 18, cd: 0.45, run: A({ dmg: 17, range: 4.5, arc: 1.05 * PI, hits: 3, spread: 0.6, knock: 1 }) },
+      { name: 'Thunder Swarm', cost: 26, cd: 0.70, run: R({ dmg: 32, radius: 6, knock: 1.5 }) },
+      { name: 'Distant Thunder', cost: 22, cd: 0.55, run: Pr({ dmg: 44, speed: 32, r: 0.7, life: 0.85 }) },
+      { name: 'Heat Lightning', cost: 26, cd: 0.70, run: Dh({ dmg: 56, dist: 9, width: 2.2, iframes: 0.24, knock: 1.8 }) },
+      { name: 'Rumble and Flash', cost: 34, cd: 1.00, run: Mu({ dmg: 16, ticks: 5, interval: 0.09, radius: 4.5, knock: 1.2 }) }
+    ],
+    ult: { name: 'Flaming Thunder God', num: '7th Form', run: p => {
+      const dir = p.aim;
+      const x1 = p.x, z1 = p.z;
+      const x2 = x1 + Math.sin(dir) * 22, z2 = z1 + Math.cos(dir
